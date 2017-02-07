@@ -1,0 +1,9 @@
+[package]
+name = "gulp"
+version = "0.1.0"
+authors = ["edef"]
+
+[dependencies]
+void = "*"
+byteorder = "*"
+safe_shl = { path = "../safe_shl" }

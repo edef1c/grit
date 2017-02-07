@@ -1,0 +1,2 @@
+[workspace]
+members = [ "safe_shl", "io_at", "gulp", "git", "git_delta", "git_packfile", "verify" ]

@@ -1,0 +1,11 @@
+[package]
+name = "io_at"
+version = "0.1.0"
+authors = ["edef"]
+
+[dependencies]
+libc = "*"
+
+[features]
+default = ["std"]
+std = []

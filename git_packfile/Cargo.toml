@@ -1,0 +1,10 @@
+[package]
+name = "git_packfile"
+version = "0.1.0"
+authors = ["edef"]
+
+[dependencies]
+void = "*"
+byteorder = "*"
+gulp = { path = "../gulp" }
+git = { path = "../git" }

@@ -1,0 +1,151 @@
+[root]
+name = "verify"
+version = "0.1.0"
+dependencies = [
+ "flate2 0.2.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "git 0.1.0",
+ "git_delta 0.1.0",
+ "git_packfile 0.1.0",
+ "gulp 0.1.0",
+ "hexdump 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sha1 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "arrayvec"
+version = "0.3.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "nodrop 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "odds 0.2.25 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "byteorder"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "flate2"
+version = "0.2.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "libc 0.2.20 (registry+https://github.com/rust-lang/crates.io-index)",
+ "miniz-sys 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "gcc"
+version = "0.3.43"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "git"
+version = "0.1.0"
+dependencies = [
+ "gulp 0.1.0",
+ "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "git_delta"
+version = "0.1.0"
+dependencies = [
+ "gulp 0.1.0",
+ "safe_shl 0.1.0",
+]
+
+[[package]]
+name = "git_packfile"
+version = "0.1.0"
+dependencies = [
+ "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "git 0.1.0",
+ "gulp 0.1.0",
+ "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "gulp"
+version = "0.1.0"
+dependencies = [
+ "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "safe_shl 0.1.0",
+ "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "hexdump"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "arrayvec 0.3.20 (registry+https://github.com/rust-lang/crates.io-index)",
+ "itertools 0.4.19 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "io_at"
+version = "0.1.0"
+dependencies = [
+ "libc 0.2.20 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "itertools"
+version = "0.4.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "libc"
+version = "0.2.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "miniz-sys"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "gcc 0.3.43 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.20 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "nodrop"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "odds 0.2.25 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "odds"
+version = "0.2.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "safe_shl"
+version = "0.1.0"
+
+[[package]]
+name = "sha1"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "void"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[metadata]
+"checksum arrayvec 0.3.20 (registry+https://github.com/rust-lang/crates.io-index)" = "d89f1b0e242270b5b797778af0c8d182a1a2ccac5d8d6fadf414223cc0fab096"
+"checksum byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c40977b0ee6b9885c9013cd41d9feffdd22deb3bb4dc3a71d901cc7a77de18c8"
+"checksum flate2 0.2.17 (registry+https://github.com/rust-lang/crates.io-index)" = "d4e4d0c15ef829cbc1b7cda651746be19cceeb238be7b1049227b14891df9e25"
+"checksum gcc 0.3.43 (registry+https://github.com/rust-lang/crates.io-index)" = "c07c758b972368e703a562686adb39125707cc1ef3399da8c019fc6c2498a75d"
+"checksum hexdump 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "850f3f2c33d20c0f96c4485e087dd580ff041d720988ebf4c84a42acf739262b"
+"checksum itertools 0.4.19 (registry+https://github.com/rust-lang/crates.io-index)" = "c4a9b56eb56058f43dc66e58f40a214b2ccbc9f3df51861b63d51dec7b65bc3f"
+"checksum libc 0.2.20 (registry+https://github.com/rust-lang/crates.io-index)" = "684f330624d8c3784fb9558ca46c4ce488073a8d22450415c5eb4f4cfb0d11b5"
+"checksum miniz-sys 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)" = "28eaee17666671fa872e567547e8428e83308ebe5808cdf6a0e28397dbe2c726"
+"checksum nodrop 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)" = "0dbbadd3f4c98dea0bd3d9b4be4c0cdaf1ab57035cb2e41fce3983db5add7cc5"
+"checksum odds 0.2.25 (registry+https://github.com/rust-lang/crates.io-index)" = "c3df9b730298cea3a1c3faa90b7e2f9df3a9c400d0936d6015e6165734eefcba"
+"checksum sha1 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "cc30b1e1e8c40c121ca33b86c23308a090d19974ef001b4bf6e61fd1a0fb095c"
+"checksum void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"

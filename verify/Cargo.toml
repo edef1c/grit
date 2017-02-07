@@ -1,0 +1,13 @@
+[package]
+name = "verify"
+version = "0.1.0"
+authors = ["edef"]
+
+[dependencies]
+gulp = { path = "../gulp" }
+git = { path = "../git" }
+git_delta = { path = "../git_delta" }
+git_packfile = { path = "../git_packfile" }
+hexdump = "*"
+flate2 = "*"
+sha1 = "*"

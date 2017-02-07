@@ -1,0 +1,8 @@
+[package]
+name = "git"
+version = "0.1.0"
+authors = ["edef"]
+
+[dependencies]
+void = "*"
+gulp = { path = "../gulp" }
