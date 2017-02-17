@@ -9,7 +9,7 @@ extern crate sha1;
 use std::{io, fs};
 use std::io::{Read, BufRead, Write, Seek, SeekFrom};
 use std::fmt::Write as FmtWrite;
-use gulp::{ReadResult, FromBytes};
+use gulp::{ReadResult, FromBytes, Parse, ParseResult};
 
 const PACK_PATH: &'static str = "/home/edef/src/github.com/edef1c/libfringe/.git/objects/pack/pack-b452a7d6bcc41ff3e93d12ef285a17c9c04c9804.pack";
 
@@ -195,7 +195,7 @@ struct DeltaReader<Base: Read + Seek, Delta: BufRead> {
 
 impl<Base: Read + Seek, Delta: BufRead> DeltaReader<Base, Delta> {
   pub fn new(base: Base, mut delta: Delta) -> io::Result<Option<DeltaReader<Base, Delta>>> {
-    from_buf_reader::<_, git_delta::Header>(&mut delta)
+    parse_from_buf_reader::<_, git_delta::HeaderParser>(&mut delta)
       .map(|header| header
       .map(|header| DeltaReader { base: base, delta: delta, header: header, command: git_delta::Command::Insert { len: 0 }, seek: false }))
   }
@@ -207,7 +207,8 @@ impl<Base: Read + Seek, Delta: BufRead> DeltaReader<Base, Delta> {
 impl<Base: Read + Seek, Delta: BufRead> Read for DeltaReader<Base, Delta> {
   fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
     if self.command.len() == 0 {
-      match try!(from_buf_reader(&mut self.delta)) {
+      match try!(parse_from_buf_reader::<_, git_delta::CommandParser>(&mut self.delta)) {
+      // match try!(from_buf_reader(&mut self.delta)) {
         Some(c) => { self.command = c; self.seek = true },
         None => return Ok(0)
       };
@@ -228,6 +229,29 @@ impl<Base: Read + Seek, Delta: BufRead> Read for DeltaReader<Base, Delta> {
         let n = try!(r.read(buf));
         *len -= n as u32;
         Ok(n)
+      }
+    }
+  }
+}
+
+fn parse_from_buf_reader<R: io::BufRead, P: Parse + Default>(mut r: R) -> io::Result<Option<P::Output>> {
+  let mut acc = vec![];
+  loop {
+    let buf_len = {
+      let buf = try!(r.fill_buf());
+      acc.extend_from_slice(buf);
+      if buf.len() == 0 {
+        if acc.len() == 0 { return Ok(None) };
+        panic!("parse_from_buf_reader: unexpected EOF");
+      }
+      buf.len()
+    };
+    match P::default().parse(&acc) {
+      ParseResult::Incomplete(_) => r.consume(buf_len),
+      ParseResult::Err(e) => panic!("parse_from_buf_reader: {:?}", e),
+      ParseResult::Done(value, tail) => {
+        r.consume(buf_len - tail.len());
+        return Ok(Some(value));
       }
     }
   }
