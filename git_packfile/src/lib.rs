@@ -221,14 +221,14 @@ impl DeltaHeader {
 
 enum DeltaHeaderParser {
   Offset(u64, DeltaOffsetParser),
-  Reference(u64, gulp::Bytes<[u8; 20]>)
+  Reference(u64, git::ObjectIdParser)
 }
 
 impl DeltaHeaderParser {
   fn new(delta_len: u64, kind: DeltaKind) -> DeltaHeaderParser {
     match kind {
       DeltaKind::Offset    => DeltaHeaderParser::Offset(delta_len, DeltaOffsetParser::Fresh),
-      DeltaKind::Reference => DeltaHeaderParser::Reference(delta_len, gulp::Bytes::default())
+      DeltaKind::Reference => DeltaHeaderParser::Reference(delta_len, git::ObjectIdParser::default())
     }
   }
 }
@@ -246,7 +246,7 @@ impl Parse for DeltaHeaderParser {
       DeltaHeaderParser::Reference(delta_len, p) => match p.parse(buf) {
         ParseResult::Incomplete(p) => ParseResult::Incomplete(DeltaHeaderParser::Reference(delta_len, p)),
         ParseResult::Err(e) => match e {},
-        ParseResult::Done(base, tail) => ParseResult::Done(DeltaHeader::Reference { delta_len: delta_len, base: git::ObjectId(base) }, tail)
+        ParseResult::Done(base, tail) => ParseResult::Done(DeltaHeader::Reference { delta_len: delta_len, base: base }, tail)
       }
     }
   }

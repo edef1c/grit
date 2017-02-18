@@ -3,7 +3,7 @@ extern crate void;
 extern crate gulp;
 
 use void::Void;
-use gulp::{FromBytes, ReadResult};
+use gulp::{Parse, ParseResult};
 use core::fmt;
 
 #[derive(Copy, Clone, Debug)]
@@ -34,10 +34,18 @@ pub struct ObjectHeader {
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct ObjectId(pub [u8; 20]);
 
-impl FromBytes for ObjectId {
+#[derive(Default)]
+pub struct ObjectIdParser(gulp::Bytes<[u8; 20]>);
+
+impl Parse for ObjectIdParser {
+  type Output = ObjectId;
   type Err = Void;
-  fn from_bytes(buf: &[u8]) -> ReadResult<ObjectId, Void> {
-    FromBytes::from_bytes(buf).map(ObjectId)
+  fn parse(self, buf: &[u8]) -> ParseResult<Self> {
+    match self.0.parse(buf) {
+      ParseResult::Incomplete(p) => ParseResult::Incomplete(ObjectIdParser(p)),
+      ParseResult::Err(e) => match e {},
+      ParseResult::Done(buf, tail) => ParseResult::Done(ObjectId(buf), tail)
+    }
   }
 }
 
