@@ -2,6 +2,7 @@
 mod std { pub use core::*; }
 
 extern crate void;
+extern crate safe_shl;
 extern crate gulp;
 extern crate byteorder;
 extern crate git;
@@ -286,7 +287,10 @@ impl DeltaOffsetParser {
     let mut buf = buf.iter();
     while let Some(&b) = buf.next() {
       off += 1;
-      off <<= 7;
+      off = match safe_shl::u64(off, 7) {
+        None => return ParseResult::Err(InvalidDeltaHeader(())),
+        Some(off) => off
+      };
       off |= b as u64 & 0x7F;
       if b&0x80 == 0 {
         return ParseResult::Done(off, buf.as_slice());
