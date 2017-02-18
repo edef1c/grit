@@ -134,6 +134,15 @@ pub struct Leb128 {
   value: u64
 }
 
+impl Leb128 {
+  pub fn new(shift: u8, value: u64) -> Leb128 {
+    Leb128 {
+      shift: shift,
+      value: value
+    }
+  }
+}
+
 impl Parse for Leb128 {
   type Err = super::Overflow;
   type Output = u64;

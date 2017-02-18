@@ -19,10 +19,10 @@ fn full_path_for_object_id(object_id: git::ObjectId) -> String {
 
 fn main() {
   let mut r = fs::File::open(PACK_PATH).map(io::BufReader::new).unwrap();
-  let mut file_header: git_packfile::FileHeader = from_buf_reader(&mut r).unwrap().unwrap();
+  let mut file_header: git_packfile::FileHeader = parse_from_buf_reader::<_, git_packfile::FileHeaderParser>(&mut r).unwrap().unwrap();
   writeln!(io::stderr(), "{:?}", file_header).unwrap();
   let mut objects = PackfileIndex::new();
-  while let (position, Some(entry_header)) = (r.seek(SeekFrom::Current(0)).unwrap(), from_buf_reader::<_, git_packfile::EntryHeader>(&mut r).unwrap()) {
+  while let (position, Some(entry_header)) = (r.seek(SeekFrom::Current(0)).unwrap(), parse_from_buf_reader::<_, git_packfile::EntryHeaderParser>(&mut r).unwrap()) {
     writeln!(io::stderr(), "{:?}", entry_header).unwrap();
     let mut body = flate2::bufread::ZlibDecoder::new(&mut r);
     let mut hasher = Sha1Writer(sha1::Sha1::new(), io::sink());

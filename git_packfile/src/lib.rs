@@ -2,12 +2,11 @@
 mod std { pub use core::*; }
 
 extern crate void;
-#[macro_use]
 extern crate gulp;
 extern crate byteorder;
 extern crate git;
 
-use gulp::{ReadResult, FromBytes, read_tag, read_u8, read_u32, read_le_base128_cont};
+use gulp::{Parse, ParseResult};
 
 #[derive(Copy, Clone, Debug)]
 pub struct FileHeader {
@@ -17,15 +16,58 @@ pub struct FileHeader {
 #[derive(Copy, Clone, Debug)]
 pub struct InvalidFileHeader(());
 
-impl FromBytes for FileHeader {
-  type Err = InvalidFileHeader;
-  fn from_bytes(buf: &[u8]) -> ReadResult<FileHeader, InvalidFileHeader> {
-    let (_, buf) = try_read!(read_tag(buf, b"PACK\x00\x00\x00\x02").map_err(InvalidFileHeader));
-    let (count, buf) = try_read_void!(read_u32::<byteorder::NetworkEndian>(buf));
-    ReadResult::Ok(FileHeader { count: count }, buf)
+pub struct FileHeaderParser(FileHeaderParserState);
+
+impl Default for FileHeaderParser {
+  fn default() -> FileHeaderParser {
+    FileHeaderParser(FileHeaderParserState::Tag(0))
   }
 }
 
+enum FileHeaderParserState {
+  Tag(usize),
+  Count(gulp::Bytes<[u8; 4]>)
+}
+
+impl Parse for FileHeaderParser {
+  type Output = FileHeader;
+  type Err = InvalidFileHeader;
+  fn parse(self, buf: &[u8]) -> ParseResult<Self> {
+    match self.0 {
+      FileHeaderParserState::Tag(n)   => FileHeaderParser::parse_tag(n, buf),
+      FileHeaderParserState::Count(p) => FileHeaderParser::parse_count(p, buf)
+    }
+  }
+}
+
+impl FileHeaderParser {
+  fn parse_tag(n: usize, buf: &[u8]) -> ParseResult<Self> {
+    const TAG: &'static [u8] = b"PACK\x00\x00\x00\x02";
+    let mut buf = buf.iter();
+    let mut tag = TAG[n..].iter();
+    while let Some((b, t)) = (&mut tag).zip(&mut buf).next() {
+      if b != t {
+        return ParseResult::Err(InvalidFileHeader(()));
+      }
+    }
+    if tag.len() != 0 {
+      ParseResult::Incomplete(FileHeaderParser(FileHeaderParserState::Tag(TAG.len() - tag.len())))
+    } else {
+      FileHeaderParser::parse_count(gulp::Bytes::default(), buf.as_slice())
+    }
+  }
+  fn parse_count(p: gulp::Bytes<[u8; 4]>, buf: &[u8]) -> ParseResult<Self> {
+    match p.parse(buf) {
+      ParseResult::Incomplete(p) => ParseResult::Incomplete(FileHeaderParser(FileHeaderParserState::Count(p))),
+      ParseResult::Err(e) => match e {},
+      ParseResult::Done(count, tail) => {
+        use byteorder::ByteOrder;
+        let count = byteorder::NetworkEndian::read_u32(&count);
+        ParseResult::Done(FileHeader { count: count }, tail)
+      }
+    }
+  }
+}
 
 #[derive(Copy, Clone, Debug)]
 pub enum EntryHeader {
@@ -64,10 +106,39 @@ impl From<DeltaKind> for EntryKind {
   fn from(k: DeltaKind) -> EntryKind { EntryKind::Delta(k) }
 }
 
-impl FromBytes for EntryHeader {
+impl Default for EntryHeaderParser {
+  fn default() -> EntryHeaderParser {
+    EntryHeaderParser(EntryHeaderParserState::Fresh)
+  }
+}
+
+pub struct EntryHeaderParser(EntryHeaderParserState);
+
+enum EntryHeaderParserState {
+  Fresh,
+  Size(EntryKind, gulp::Leb128),
+  Delta(DeltaHeaderParser)
+}
+
+impl Parse for EntryHeaderParser {
+  type Output = EntryHeader;
   type Err = InvalidEntryHeader;
-  fn from_bytes(buf: &[u8]) -> ReadResult<EntryHeader, InvalidEntryHeader> {
-    let (byte, buf) = try_read_void!(read_u8(buf));
+  fn parse(self, buf: &[u8]) -> ParseResult<Self> {
+    match self.0 {
+      EntryHeaderParserState::Fresh         => EntryHeaderParser::parse_fresh(buf),
+      EntryHeaderParserState::Size(kind, p) => EntryHeaderParser::parse_size(kind, p, buf),
+      EntryHeaderParserState::Delta(p)      => EntryHeaderParser::parse_delta(p, buf)
+    }
+  }
+}
+
+impl EntryHeaderParser {
+  fn parse_fresh(buf: &[u8]) -> ParseResult<Self> {
+    let mut buf = buf.iter();
+    let byte = match buf.next() {
+      None => return ParseResult::Incomplete(EntryHeaderParser(EntryHeaderParserState::Fresh)),
+      Some(&b) => b
+    };
     let kind: EntryKind = match (byte>>4) & 7 {
       1 => From::from(git::ObjectKind::Commit),
       2 => From::from(git::ObjectKind::Tree),
@@ -75,17 +146,33 @@ impl FromBytes for EntryHeader {
       4 => From::from(git::ObjectKind::Tag),
       6 => From::from(DeltaKind::Offset),
       7 => From::from(DeltaKind::Reference),
-      _ => return ReadResult::Err(InvalidEntryHeader(()))
+      _ => return ParseResult::Err(InvalidEntryHeader(()))
     };
     let size = byte as u64 & 15;
-    let (size, buf) = if byte&0x80 != 0 {
-      try_read!(read_le_base128_cont(buf, size, 4))
+    if byte&0x80 != 0 {
+      EntryHeaderParser::parse_size(kind, gulp::Leb128::new(4, size), buf.as_slice())
     } else {
-      (size, buf)
-    };
+      EntryHeaderParser::parse_tail(kind, size, buf.as_slice())
+    }
+  }
+  fn parse_size(kind: EntryKind, p: gulp::Leb128, buf: &[u8]) -> ParseResult<Self> {
+    match p.parse(buf) {
+      ParseResult::Incomplete(p) => ParseResult::Incomplete(EntryHeaderParser(EntryHeaderParserState::Size(kind, p))),
+      ParseResult::Err(e) => ParseResult::Err(From::from(e)),
+      ParseResult::Done(size, tail) => EntryHeaderParser::parse_tail(kind, size, tail)
+    }
+  }
+  fn parse_tail(kind: EntryKind, size: u64, buf: &[u8]) -> ParseResult<Self> {
     match kind {
-      EntryKind::Object(kind) => ReadResult::Ok(From::from(git::ObjectHeader { kind: kind, size: size }), buf),
-      EntryKind::Delta(kind)  => DeltaHeader::from_bytes(buf, size, kind).map(From::from).map_err(From::from)
+      EntryKind::Object(kind) => ParseResult::Done(From::from(git::ObjectHeader { kind: kind, size: size }), buf),
+      EntryKind::Delta(kind)  => EntryHeaderParser::parse_delta(DeltaHeaderParser::new(size, kind), buf)
+    }
+  }
+  fn parse_delta(p: DeltaHeaderParser, buf: &[u8]) -> ParseResult<Self> {
+    match p.parse(buf) {
+      ParseResult::Incomplete(p) => ParseResult::Incomplete(EntryHeaderParser(EntryHeaderParserState::Delta(p))),
+      ParseResult::Err(e) => ParseResult::Err(From::from(e)),
+      ParseResult::Done(header, tail) => ParseResult::Done(From::from(header), tail)
     }
   }
 }
@@ -132,29 +219,80 @@ impl DeltaHeader {
   }
 }
 
-impl DeltaHeader {
-  fn from_bytes(buf: &[u8], delta_len: u64, kind: DeltaKind) -> ReadResult<DeltaHeader, InvalidDeltaHeader> {
+enum DeltaHeaderParser {
+  Offset(u64, DeltaOffsetParser),
+  Reference(u64, gulp::Bytes<[u8; 20]>)
+}
+
+impl DeltaHeaderParser {
+  fn new(delta_len: u64, kind: DeltaKind) -> DeltaHeaderParser {
     match kind {
-      DeltaKind::Offset    => DeltaHeader::offset_from_bytes(buf).map(|base| DeltaHeader::Offset { delta_len: delta_len, base: base }),
-      DeltaKind::Reference => FromBytes::from_bytes(buf).map(|base| DeltaHeader::Reference { delta_len: delta_len, base: base }).map_err(|v| match v {})
+      DeltaKind::Offset    => DeltaHeaderParser::Offset(delta_len, DeltaOffsetParser::Fresh),
+      DeltaKind::Reference => DeltaHeaderParser::Reference(delta_len, gulp::Bytes::default())
     }
   }
-  fn offset_from_bytes(buf: &[u8]) -> ReadResult<u64, InvalidDeltaHeader> {
-    let (b, buf) = try_read_void!(read_u8(buf));
-    let mut off = b as u64 & 0x7F;
-    if b&0x80 == 0 {
-      return ReadResult::Ok(off, buf);
+}
+
+impl Parse for DeltaHeaderParser {
+  type Output = DeltaHeader;
+  type Err = InvalidDeltaHeader;
+  fn parse(self, buf: &[u8]) -> ParseResult<Self> {
+    match self {
+      DeltaHeaderParser::Offset(delta_len, p) => match p.parse(buf) {
+        ParseResult::Incomplete(p) => ParseResult::Incomplete(DeltaHeaderParser::Offset(delta_len, p)),
+        ParseResult::Err(e) => ParseResult::Err(e),
+        ParseResult::Done(base, tail) => ParseResult::Done(DeltaHeader::Offset { delta_len: delta_len, base: base }, tail)
+      },
+      DeltaHeaderParser::Reference(delta_len, p) => match p.parse(buf) {
+        ParseResult::Incomplete(p) => ParseResult::Incomplete(DeltaHeaderParser::Reference(delta_len, p)),
+        ParseResult::Err(e) => match e {},
+        ParseResult::Done(base, tail) => ParseResult::Done(DeltaHeader::Reference { delta_len: delta_len, base: git::ObjectId(base) }, tail)
+      }
     }
+  }
+}
+
+enum DeltaOffsetParser {
+  Fresh,
+  Offset(u64)
+}
+
+impl Parse for DeltaOffsetParser {
+  type Output = u64;
+  type Err = InvalidDeltaHeader;
+  fn parse(self, buf: &[u8]) -> ParseResult<Self> {
+    match self {
+      DeltaOffsetParser::Fresh => Self::parse_fresh(buf),
+      DeltaOffsetParser::Offset(off) => Self::parse_off(off, buf)
+    }
+  }
+}
+
+impl DeltaOffsetParser {
+  fn parse_fresh(buf: &[u8]) -> ParseResult<Self> {
+    let mut buf = buf.iter();
+    let b = match buf.next() {
+      None => return ParseResult::Incomplete(DeltaOffsetParser::Fresh),
+      Some(&b) => b
+    };
+    let off = b as u64 & 0x7F;
+    if b&0x80 == 0 {
+      ParseResult::Done(off, buf.as_slice())
+    } else {
+      Self::parse_off(off, buf.as_slice())
+    }
+  }
+  fn parse_off(mut off: u64, buf: &[u8]) -> ParseResult<Self> {
     let mut buf = buf.iter();
     while let Some(&b) = buf.next() {
       off += 1;
       off <<= 7;
       off |= b as u64 & 0x7F;
       if b&0x80 == 0 {
-        return ReadResult::Ok(off, buf.as_slice());
+        return ParseResult::Done(off, buf.as_slice());
       }
     }
-    ReadResult::Incomplete(1)
+    ParseResult::Incomplete(DeltaOffsetParser::Offset(off))
   }
 }
 
