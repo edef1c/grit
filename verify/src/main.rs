@@ -9,7 +9,7 @@ extern crate sha1;
 use std::{io, fs};
 use std::io::{Read, BufRead, Write, Seek, SeekFrom};
 use std::fmt::Write as FmtWrite;
-use gulp::{ReadResult, FromBytes, Parse, ParseResult};
+use gulp::{Parse, ParseResult};
 
 const PACK_PATH: &'static str = "/home/edef/src/github.com/edef1c/libfringe/.git/objects/pack/pack-b452a7d6bcc41ff3e93d12ef285a17c9c04c9804.pack";
 
@@ -109,53 +109,6 @@ impl PackfileIndex {
   }
   fn find_by_offset(&self, offset: u64) -> Option<&PackfileIndexEntry> {
     self.by_offset.binary_search_by_key(&offset, |&idx| self.objects[idx].offset).ok().map(|idx| &self.objects[idx])
-  }
-}
-
-fn from_buf_reader<R: io::BufRead, T: FromBytes>(mut r: R) -> io::Result<Option<T>> {
-  let mut buf = Vec::new();
-  let mut peeked_bytes = 0;
-  let mut needed_bytes;
-  loop {
-    match T::from_bytes(&buf) {
-      ReadResult::Err(e) => panic!("{:?}", e),
-      ReadResult::Ok(value, tail) => {
-        r.consume(peeked_bytes - tail.len());
-        return Ok(Some(value));
-      }
-      ReadResult::Incomplete(n) => {
-        r.consume(peeked_bytes);
-        needed_bytes = n;
-      }
-    }
-    let peek = r.fill_buf().unwrap();
-    peeked_bytes = peek.len();
-    buf.extend_from_slice(peek);
-    if peeked_bytes == 0 {
-      return if buf.len() == 0 {
-        Ok(None)
-      } else {
-        hexdump::hexdump(&buf);
-        Err(io::Error::new(io::ErrorKind::UnexpectedEof, IncompleteError { needed: needed_bytes, buffered: buf.len() }))
-      };
-    }
-  }
-}
-
-#[derive(Debug)]
-pub struct IncompleteError {
-  buffered: usize,
-  needed: usize
-}
-
-impl ::std::error::Error for IncompleteError {
-  fn description(&self) -> &str { "IncompleteError" }
-  fn cause(&self) -> Option<&::std::error::Error> { None }
-}
-
-impl ::std::fmt::Display for IncompleteError {
-  fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-    write!(f, "IncompleteError: needed {} more bytes after buffering {} bytes, but encountered EOF", self.needed, self.buffered)
   }
 }
 
