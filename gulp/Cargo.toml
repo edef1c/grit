@@ -5,5 +5,4 @@ authors = ["edef"]
 
 [dependencies]
 void = "*"
-byteorder = "*"
 safe_shl = { path = "../safe_shl" }

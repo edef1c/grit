@@ -69,7 +69,6 @@ dependencies = [
 name = "gulp"
 version = "0.1.0"
 dependencies = [
- "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "safe_shl 0.1.0",
  "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

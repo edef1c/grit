@@ -2,7 +2,6 @@
 
 extern crate void;
 extern crate safe_shl;
-extern crate byteorder;
 
 use void::Void;
 use core::fmt::Debug;
