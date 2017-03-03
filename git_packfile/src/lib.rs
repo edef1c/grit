@@ -52,7 +52,7 @@ impl FileHeaderParser {
       }
     }
     if tag.len() != 0 {
-      gulp::Result::Incomplete(FileHeaderParser(FileHeaderParserState::Tag(TAG.len() - tag.len())))
+      gulp::Result::Incomplete(FileHeaderParser(FileHeaderParserState::Tag(TAG.len() - tag.len() - 1)))
     } else {
       FileHeaderParser::parse_count(gulp::Bytes::default(), buf.as_slice())
     }
