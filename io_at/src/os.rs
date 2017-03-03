@@ -5,7 +5,7 @@ use {ReadAt, WriteAt};
 use core::i64;
 use self::std::os::unix::io::AsRawFd;
 use self::std::io;
-use self::libc::{pread, pwrite, EINVAL};
+use self::libc::{pread, pwrite, EINVAL, c_void};
 
 pub struct Fd<T: AsRawFd> {
   inner: T
@@ -26,7 +26,7 @@ impl<T: AsRawFd> ReadAt for Fd<T> {
     if off > i64::MAX as u64 {
       return Err(io::Error::from_raw_os_error(EINVAL));
     }
-    let ret = unsafe { pread(self.inner.as_raw_fd(), buf.as_mut_ptr() as *mut _, buf.len(), off as i64) };
+    let ret = unsafe { pread(self.inner.as_raw_fd(), buf.as_mut_ptr() as *mut c_void, buf.len(), off as i64) };
     if ret < 0 {
       Err(io::Error::last_os_error())
     } else {
@@ -41,7 +41,7 @@ impl<T: AsRawFd> WriteAt for Fd<T> {
     if off > i64::MAX as u64 {
       return Err(io::Error::from_raw_os_error(EINVAL));
     }
-    let ret = unsafe { pwrite(self.inner.as_raw_fd(), buf.as_ptr() as *mut _, buf.len(), off as i64) };
+    let ret = unsafe { pwrite(self.inner.as_raw_fd(), buf.as_ptr() as *const c_void, buf.len(), off as i64) };
     if ret < 0 {
       Err(io::Error::last_os_error())
     } else {
