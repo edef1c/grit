@@ -8,11 +8,13 @@ use core::fmt::Debug;
 use core::convert::From;
 use core::marker::PhantomData;
 
-pub enum ParseResult<'a, P: Parse> {
+pub enum Result<'a, P, T, E> {
   Incomplete(P),
-  Ok(P::Output, &'a [u8]),
-  Err(P::Err)
+  Ok(T, &'a [u8]),
+  Err(E)
 }
+
+pub type ParseResult<'a, P: Parse> = Result<'a, P, P::Output, P::Err>;
 
 pub trait Parse: Sized {
   type Err: Debug;
@@ -43,9 +45,9 @@ macro_rules! bytes {
         self.val[self.len..].copy_from_slice(buf);
         self.len += buf.len();
         if self.len < $n {
-          ParseResult::Incomplete(self)
+          Result::Incomplete(self)
         } else {
-          ParseResult::Ok(self.val, tail)
+          Result::Ok(self.val, tail)
         }
       }
     }
@@ -65,7 +67,7 @@ impl Parse for Bytes<[u8; 0]> {
   type Err = Void;
   type Output = [u8; 0];
   fn parse(self, buf: &[u8]) -> ParseResult<Self> {
-    ParseResult::Ok([], buf)
+    Result::Ok([], buf)
   }
 }
 
@@ -119,16 +121,16 @@ impl<T, U, E> Pair<T, U, E>
   }
   fn parse_fst(p: T, buf: &[u8]) -> ParseResult<Self> {
     match p.parse(buf) {
-      ParseResult::Incomplete(p) => ParseResult::Incomplete(Pair::wrap(PairState::First(p))),
-      ParseResult::Err(e) => ParseResult::Err(From::from(e)),
-      ParseResult::Ok(fst, tail) => Pair::parse_snd(fst, Default::default(), tail)
+      Result::Incomplete(p) => Result::Incomplete(Pair::wrap(PairState::First(p))),
+      Result::Err(e) => Result::Err(From::from(e)),
+      Result::Ok(fst, tail) => Pair::parse_snd(fst, Default::default(), tail)
     }
   }
   fn parse_snd(fst: T::Output, p: U, buf: &[u8]) -> ParseResult<Self> {
     match p.parse(buf) {
-      ParseResult::Incomplete(p) => ParseResult::Incomplete(Pair::wrap(PairState::Second(fst, p))),
-      ParseResult::Err(e) => ParseResult::Err(From::from(e)),
-      ParseResult::Ok(snd, tail) => ParseResult::Ok((fst, snd), tail)
+      Result::Incomplete(p) => Result::Incomplete(Pair::wrap(PairState::Second(fst, p))),
+      Result::Err(e) => Result::Err(From::from(e)),
+      Result::Ok(snd, tail) => Result::Ok((fst, snd), tail)
     }
   }
 }
@@ -158,14 +160,14 @@ impl Parse for Leb128 {
     let mut buf = buf.iter();
     while let Some(&b) = buf.next() {
       match safe_shl::u64(b as u64 & 0x7F, self.shift as u32) {
-        None => return ParseResult::Err(Overflow),
+        None => return Result::Err(Overflow),
         Some(v) => self.value |= v
       }
       if b&0x80 == 0 {
-        return ParseResult::Ok(self.value, buf.as_slice());
+        return Result::Ok(self.value, buf.as_slice());
       }
       self.shift += 7;
     }
-    ParseResult::Incomplete(self)
+    Result::Incomplete(self)
   }
 }

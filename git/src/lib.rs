@@ -42,9 +42,9 @@ impl Parse for ObjectIdParser {
   type Err = Void;
   fn parse(self, buf: &[u8]) -> ParseResult<Self> {
     match self.0.parse(buf) {
-      ParseResult::Incomplete(p) => ParseResult::Incomplete(ObjectIdParser(p)),
-      ParseResult::Err(e) => match e {},
-      ParseResult::Ok(buf, tail) => ParseResult::Ok(ObjectId(buf), tail)
+      gulp::Result::Incomplete(p) => gulp::Result::Incomplete(ObjectIdParser(p)),
+      gulp::Result::Err(e) => match e {},
+      gulp::Result::Ok(buf, tail) => gulp::Result::Ok(ObjectId(buf), tail)
     }
   }
 }

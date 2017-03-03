@@ -9,7 +9,7 @@ extern crate sha1;
 use std::{io, fs};
 use std::io::{Read, BufRead, Write, Seek, SeekFrom};
 use std::fmt::Write as FmtWrite;
-use gulp::{Parse, ParseResult};
+use gulp::Parse;
 
 const PACK_PATH: &'static str = "/home/edef/src/github.com/edef1c/libfringe/.git/objects/pack/pack-b452a7d6bcc41ff3e93d12ef285a17c9c04c9804.pack";
 
@@ -200,9 +200,9 @@ fn parse_from_buf_reader<R: io::BufRead, P: Parse + Default>(mut r: R) -> io::Re
       buf.len()
     };
     match P::default().parse(&acc) {
-      ParseResult::Incomplete(_) => r.consume(buf_len),
-      ParseResult::Err(e) => panic!("parse_from_buf_reader: {:?}", e),
-      ParseResult::Ok(value, tail) => {
+      gulp::Result::Incomplete(_) => r.consume(buf_len),
+      gulp::Result::Err(e) => panic!("parse_from_buf_reader: {:?}", e),
+      gulp::Result::Ok(value, tail) => {
         r.consume(buf_len - tail.len());
         return Ok(Some(value));
       }

@@ -48,23 +48,23 @@ impl FileHeaderParser {
     let mut tag = TAG[n..].iter();
     while let Some((b, t)) = (&mut tag).zip(&mut buf).next() {
       if b != t {
-        return ParseResult::Err(InvalidFileHeader(()));
+        return gulp::Result::Err(InvalidFileHeader(()));
       }
     }
     if tag.len() != 0 {
-      ParseResult::Incomplete(FileHeaderParser(FileHeaderParserState::Tag(TAG.len() - tag.len())))
+      gulp::Result::Incomplete(FileHeaderParser(FileHeaderParserState::Tag(TAG.len() - tag.len())))
     } else {
       FileHeaderParser::parse_count(gulp::Bytes::default(), buf.as_slice())
     }
   }
   fn parse_count(p: gulp::Bytes<[u8; 4]>, buf: &[u8]) -> ParseResult<Self> {
     match p.parse(buf) {
-      ParseResult::Incomplete(p) => ParseResult::Incomplete(FileHeaderParser(FileHeaderParserState::Count(p))),
-      ParseResult::Err(e) => match e {},
-      ParseResult::Ok(count, tail) => {
+      gulp::Result::Incomplete(p) => gulp::Result::Incomplete(FileHeaderParser(FileHeaderParserState::Count(p))),
+      gulp::Result::Err(e) => match e {},
+      gulp::Result::Ok(count, tail) => {
         use byteorder::ByteOrder;
         let count = byteorder::NetworkEndian::read_u32(&count);
-        ParseResult::Ok(FileHeader { count: count }, tail)
+        gulp::Result::Ok(FileHeader { count: count }, tail)
       }
     }
   }
@@ -137,7 +137,7 @@ impl EntryHeaderParser {
   fn parse_fresh(buf: &[u8]) -> ParseResult<Self> {
     let mut buf = buf.iter();
     let byte = match buf.next() {
-      None => return ParseResult::Incomplete(EntryHeaderParser(EntryHeaderParserState::Fresh)),
+      None => return gulp::Result::Incomplete(EntryHeaderParser(EntryHeaderParserState::Fresh)),
       Some(&b) => b
     };
     let kind: EntryKind = match (byte>>4) & 7 {
@@ -147,7 +147,7 @@ impl EntryHeaderParser {
       4 => From::from(git::ObjectKind::Tag),
       6 => From::from(DeltaKind::Offset),
       7 => From::from(DeltaKind::Reference),
-      _ => return ParseResult::Err(InvalidEntryHeader(()))
+      _ => return gulp::Result::Err(InvalidEntryHeader(()))
     };
     let size = byte as u64 & 15;
     if byte&0x80 != 0 {
@@ -158,22 +158,22 @@ impl EntryHeaderParser {
   }
   fn parse_size(kind: EntryKind, p: gulp::Leb128, buf: &[u8]) -> ParseResult<Self> {
     match p.parse(buf) {
-      ParseResult::Incomplete(p) => ParseResult::Incomplete(EntryHeaderParser(EntryHeaderParserState::Size(kind, p))),
-      ParseResult::Err(e) => ParseResult::Err(From::from(e)),
-      ParseResult::Ok(size, tail) => EntryHeaderParser::parse_tail(kind, size, tail)
+      gulp::Result::Incomplete(p) => gulp::Result::Incomplete(EntryHeaderParser(EntryHeaderParserState::Size(kind, p))),
+      gulp::Result::Err(e) => gulp::Result::Err(From::from(e)),
+      gulp::Result::Ok(size, tail) => EntryHeaderParser::parse_tail(kind, size, tail)
     }
   }
   fn parse_tail(kind: EntryKind, size: u64, buf: &[u8]) -> ParseResult<Self> {
     match kind {
-      EntryKind::Object(kind) => ParseResult::Ok(From::from(git::ObjectHeader { kind: kind, size: size }), buf),
+      EntryKind::Object(kind) => gulp::Result::Ok(From::from(git::ObjectHeader { kind: kind, size: size }), buf),
       EntryKind::Delta(kind)  => EntryHeaderParser::parse_delta(DeltaHeaderParser::new(size, kind), buf)
     }
   }
   fn parse_delta(p: DeltaHeaderParser, buf: &[u8]) -> ParseResult<Self> {
     match p.parse(buf) {
-      ParseResult::Incomplete(p) => ParseResult::Incomplete(EntryHeaderParser(EntryHeaderParserState::Delta(p))),
-      ParseResult::Err(e) => ParseResult::Err(From::from(e)),
-      ParseResult::Ok(header, tail) => ParseResult::Ok(From::from(header), tail)
+      gulp::Result::Incomplete(p) => gulp::Result::Incomplete(EntryHeaderParser(EntryHeaderParserState::Delta(p))),
+      gulp::Result::Err(e) => gulp::Result::Err(From::from(e)),
+      gulp::Result::Ok(header, tail) => gulp::Result::Ok(From::from(header), tail)
     }
   }
 }
@@ -240,14 +240,14 @@ impl Parse for DeltaHeaderParser {
   fn parse(self, buf: &[u8]) -> ParseResult<Self> {
     match self {
       DeltaHeaderParser::Offset(delta_len, p) => match p.parse(buf) {
-        ParseResult::Incomplete(p) => ParseResult::Incomplete(DeltaHeaderParser::Offset(delta_len, p)),
-        ParseResult::Err(e) => ParseResult::Err(e),
-        ParseResult::Ok(base, tail) => ParseResult::Ok(DeltaHeader::Offset { delta_len: delta_len, base: base }, tail)
+        gulp::Result::Incomplete(p) => gulp::Result::Incomplete(DeltaHeaderParser::Offset(delta_len, p)),
+        gulp::Result::Err(e) => gulp::Result::Err(e),
+        gulp::Result::Ok(base, tail) => gulp::Result::Ok(DeltaHeader::Offset { delta_len: delta_len, base: base }, tail)
       },
       DeltaHeaderParser::Reference(delta_len, p) => match p.parse(buf) {
-        ParseResult::Incomplete(p) => ParseResult::Incomplete(DeltaHeaderParser::Reference(delta_len, p)),
-        ParseResult::Err(e) => match e {},
-        ParseResult::Ok(base, tail) => ParseResult::Ok(DeltaHeader::Reference { delta_len: delta_len, base: base }, tail)
+        gulp::Result::Incomplete(p) => gulp::Result::Incomplete(DeltaHeaderParser::Reference(delta_len, p)),
+        gulp::Result::Err(e) => match e {},
+        gulp::Result::Ok(base, tail) => gulp::Result::Ok(DeltaHeader::Reference { delta_len: delta_len, base: base }, tail)
       }
     }
   }
@@ -273,12 +273,12 @@ impl DeltaOffsetParser {
   fn parse_fresh(buf: &[u8]) -> ParseResult<Self> {
     let mut buf = buf.iter();
     let b = match buf.next() {
-      None => return ParseResult::Incomplete(DeltaOffsetParser::Fresh),
+      None => return gulp::Result::Incomplete(DeltaOffsetParser::Fresh),
       Some(&b) => b
     };
     let off = b as u64 & 0x7F;
     if b&0x80 == 0 {
-      ParseResult::Ok(off, buf.as_slice())
+      gulp::Result::Ok(off, buf.as_slice())
     } else {
       Self::parse_off(off, buf.as_slice())
     }
@@ -288,15 +288,15 @@ impl DeltaOffsetParser {
     while let Some(&b) = buf.next() {
       off += 1;
       off = match safe_shl::u64(off, 7) {
-        None => return ParseResult::Err(InvalidDeltaHeader(())),
+        None => return gulp::Result::Err(InvalidDeltaHeader(())),
         Some(off) => off
       };
       off |= b as u64 & 0x7F;
       if b&0x80 == 0 {
-        return ParseResult::Ok(off, buf.as_slice());
+        return gulp::Result::Ok(off, buf.as_slice());
       }
     }
-    ParseResult::Incomplete(DeltaOffsetParser::Offset(off))
+    gulp::Result::Incomplete(DeltaOffsetParser::Offset(off))
   }
 }
 
