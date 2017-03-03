@@ -44,7 +44,7 @@ macro_rules! bytes {
       type Output = [u8; $n];
       fn parse(mut self, buf: &[u8]) -> ParseResult<Self> {
         let (buf, tail): (&[u8], &[u8]) = if buf.len() < ($n - self.len) { (buf, &[]) } else { buf.split_at($n - self.len) };
-        self.val[self.len..].copy_from_slice(buf);
+        self.val[self.len..self.len + buf.len()].copy_from_slice(buf);
         self.len += buf.len();
         if self.len < $n {
           Result::Incomplete(self)
