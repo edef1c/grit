@@ -157,7 +157,10 @@ impl Parse for Leb128 {
   fn parse(mut self, buf: &[u8]) -> ParseResult<Self> {
     let mut buf = buf.iter();
     while let Some(&b) = buf.next() {
-      self.value |= (b as u64&0x7F) << self.shift;
+      match safe_shl::u64(b as u64 & 0x7F, self.shift as u32) {
+        None => return ParseResult::Err(Overflow),
+        Some(v) => self.value |= v
+      }
       if b&0x80 == 0 {
         return ParseResult::Ok(self.value, buf.as_slice());
       }
