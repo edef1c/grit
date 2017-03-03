@@ -8,6 +8,7 @@ use core::fmt::Debug;
 use core::convert::From;
 use core::marker::PhantomData;
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum Result<'a, P, T, E> {
   Incomplete(P),
   Ok(T, &'a [u8]),
@@ -22,6 +23,7 @@ pub trait Parse: Sized {
   fn parse(self, &[u8]) -> ParseResult<Self>;
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct Bytes<T> {
   val: T,
   len: usize
@@ -76,6 +78,7 @@ bytes!(11); bytes!(12); bytes!(13); bytes!(14); bytes!(15); bytes!(16); bytes!(1
 bytes!(21); bytes!(22); bytes!(23); bytes!(24); bytes!(25); bytes!(26); bytes!(27); bytes!(28); bytes!(29); bytes!(30);
 bytes!(31); bytes!(32); bytes!(33); bytes!(34); bytes!(35); bytes!(36); bytes!(37); bytes!(38); bytes!(39); bytes!(40);
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct Pair<P, Q, E>
   where P: Parse, Q: Parse + Default,
         E: From<P::Err> + From<Q::Err> + Debug {
@@ -83,6 +86,7 @@ pub struct Pair<P, Q, E>
   _phantom: PhantomData<*const E>
 }
 
+#[derive(Debug, Eq, PartialEq)]
 enum PairState<P, T, Q> {
   First(P),
   Second(T, Q)
