@@ -10,7 +10,7 @@ use core::marker::PhantomData;
 
 pub enum ParseResult<'a, P: Parse> {
   Incomplete(P),
-  Done(P::Output, &'a [u8]),
+  Ok(P::Output, &'a [u8]),
   Err(P::Err)
 }
 
@@ -45,7 +45,7 @@ macro_rules! bytes {
         if self.len < $n {
           ParseResult::Incomplete(self)
         } else {
-          ParseResult::Done(self.val, tail)
+          ParseResult::Ok(self.val, tail)
         }
       }
     }
@@ -65,7 +65,7 @@ impl Parse for Bytes<[u8; 0]> {
   type Err = Void;
   type Output = [u8; 0];
   fn parse(self, buf: &[u8]) -> ParseResult<Self> {
-    ParseResult::Done([], buf)
+    ParseResult::Ok([], buf)
   }
 }
 
@@ -121,14 +121,14 @@ impl<T, U, E> Pair<T, U, E>
     match p.parse(buf) {
       ParseResult::Incomplete(p) => ParseResult::Incomplete(Pair::wrap(PairState::First(p))),
       ParseResult::Err(e) => ParseResult::Err(From::from(e)),
-      ParseResult::Done(fst, tail) => Pair::parse_snd(fst, Default::default(), tail)
+      ParseResult::Ok(fst, tail) => Pair::parse_snd(fst, Default::default(), tail)
     }
   }
   fn parse_snd(fst: T::Output, p: U, buf: &[u8]) -> ParseResult<Self> {
     match p.parse(buf) {
       ParseResult::Incomplete(p) => ParseResult::Incomplete(Pair::wrap(PairState::Second(fst, p))),
       ParseResult::Err(e) => ParseResult::Err(From::from(e)),
-      ParseResult::Done(snd, tail) => ParseResult::Done((fst, snd), tail)
+      ParseResult::Ok(snd, tail) => ParseResult::Ok((fst, snd), tail)
     }
   }
 }
@@ -159,7 +159,7 @@ impl Parse for Leb128 {
     while let Some(&b) = buf.next() {
       self.value |= (b as u64&0x7F) << self.shift;
       if b&0x80 == 0 {
-        return ParseResult::Done(self.value, buf.as_slice());
+        return ParseResult::Ok(self.value, buf.as_slice());
       }
       self.shift += 7;
     }

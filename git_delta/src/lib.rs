@@ -31,7 +31,7 @@ impl Parse for HeaderParser {
     match self.0.parse(buf) {
       ParseResult::Incomplete(p) => ParseResult::Incomplete(HeaderParser(p)),
       ParseResult::Err(gulp::Overflow) => ParseResult::Err(InvalidHeader(())),
-      ParseResult::Done((base_len, result_len), tail) => ParseResult::Done(Header { base_len: base_len, result_len: result_len }, tail)
+      ParseResult::Ok((base_len, result_len), tail) => ParseResult::Ok(Header { base_len: base_len, result_len: result_len }, tail)
     }
   }
 }
@@ -93,7 +93,7 @@ impl CommandParser {
       None => ParseResult::Incomplete(CommandParser(CommandParserState::Fresh)),
       Some(&b) => match b {
         0 => ParseResult::Err(InvalidCommand(())),
-        len if len&0x80 == 0 => ParseResult::Done(Command::Insert { len: len }, buf.as_slice()),
+        len if len&0x80 == 0 => ParseResult::Ok(Command::Insert { len: len }, buf.as_slice()),
         bitmap => CommandParser::parse_copy_off(VarintParser::new(bitmap, 4), buf.as_slice())
       }
     }
@@ -102,15 +102,15 @@ impl CommandParser {
     match p.parse(buf) {
       ParseResult::Incomplete(p) => ParseResult::Incomplete(CommandParser(CommandParserState::CopyOff(p))),
       ParseResult::Err(gulp::Overflow) => ParseResult::Err(InvalidCommand(())),
-      ParseResult::Done((off, bitmap), buf) => CommandParser::parse_copy_len(off, VarintParser::new(bitmap, 3), buf),
+      ParseResult::Ok((off, bitmap), buf) => CommandParser::parse_copy_len(off, VarintParser::new(bitmap, 3), buf),
     }
   }
   fn parse_copy_len(off: u64, p: VarintParser, buf: &[u8]) -> gulp::ParseResult<Self> {
     match p.parse(buf) {
       ParseResult::Incomplete(p) => ParseResult::Incomplete(CommandParser(CommandParserState::CopyLen(off, p))),
       ParseResult::Err(gulp::Overflow) => ParseResult::Err(InvalidCommand(())),
-      ParseResult::Done((0,   _), buf) => ParseResult::Done(Command::Copy { off: off as u32, len: 0x10000    }, buf),
-      ParseResult::Done((len, _), buf) => ParseResult::Done(Command::Copy { off: off as u32, len: len as u32 }, buf)
+      ParseResult::Ok((0,   _), buf) => ParseResult::Ok(Command::Copy { off: off as u32, len: 0x10000    }, buf),
+      ParseResult::Ok((len, _), buf) => ParseResult::Ok(Command::Copy { off: off as u32, len: len as u32 }, buf)
     }
   }
 }
@@ -148,6 +148,6 @@ impl Parse for VarintParser {
       }
       self.bitmap >>= 1;
     }
-    ParseResult::Done((self.n, self.bitmap), iter.as_slice())
+    ParseResult::Ok((self.n, self.bitmap), iter.as_slice())
   }
 }

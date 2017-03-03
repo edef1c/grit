@@ -202,7 +202,7 @@ fn parse_from_buf_reader<R: io::BufRead, P: Parse + Default>(mut r: R) -> io::Re
     match P::default().parse(&acc) {
       ParseResult::Incomplete(_) => r.consume(buf_len),
       ParseResult::Err(e) => panic!("parse_from_buf_reader: {:?}", e),
-      ParseResult::Done(value, tail) => {
+      ParseResult::Ok(value, tail) => {
         r.consume(buf_len - tail.len());
         return Ok(Some(value));
       }

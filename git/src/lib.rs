@@ -44,7 +44,7 @@ impl Parse for ObjectIdParser {
     match self.0.parse(buf) {
       ParseResult::Incomplete(p) => ParseResult::Incomplete(ObjectIdParser(p)),
       ParseResult::Err(e) => match e {},
-      ParseResult::Done(buf, tail) => ParseResult::Done(ObjectId(buf), tail)
+      ParseResult::Ok(buf, tail) => ParseResult::Ok(ObjectId(buf), tail)
     }
   }
 }

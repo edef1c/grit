@@ -61,10 +61,10 @@ impl FileHeaderParser {
     match p.parse(buf) {
       ParseResult::Incomplete(p) => ParseResult::Incomplete(FileHeaderParser(FileHeaderParserState::Count(p))),
       ParseResult::Err(e) => match e {},
-      ParseResult::Done(count, tail) => {
+      ParseResult::Ok(count, tail) => {
         use byteorder::ByteOrder;
         let count = byteorder::NetworkEndian::read_u32(&count);
-        ParseResult::Done(FileHeader { count: count }, tail)
+        ParseResult::Ok(FileHeader { count: count }, tail)
       }
     }
   }
@@ -160,12 +160,12 @@ impl EntryHeaderParser {
     match p.parse(buf) {
       ParseResult::Incomplete(p) => ParseResult::Incomplete(EntryHeaderParser(EntryHeaderParserState::Size(kind, p))),
       ParseResult::Err(e) => ParseResult::Err(From::from(e)),
-      ParseResult::Done(size, tail) => EntryHeaderParser::parse_tail(kind, size, tail)
+      ParseResult::Ok(size, tail) => EntryHeaderParser::parse_tail(kind, size, tail)
     }
   }
   fn parse_tail(kind: EntryKind, size: u64, buf: &[u8]) -> ParseResult<Self> {
     match kind {
-      EntryKind::Object(kind) => ParseResult::Done(From::from(git::ObjectHeader { kind: kind, size: size }), buf),
+      EntryKind::Object(kind) => ParseResult::Ok(From::from(git::ObjectHeader { kind: kind, size: size }), buf),
       EntryKind::Delta(kind)  => EntryHeaderParser::parse_delta(DeltaHeaderParser::new(size, kind), buf)
     }
   }
@@ -173,7 +173,7 @@ impl EntryHeaderParser {
     match p.parse(buf) {
       ParseResult::Incomplete(p) => ParseResult::Incomplete(EntryHeaderParser(EntryHeaderParserState::Delta(p))),
       ParseResult::Err(e) => ParseResult::Err(From::from(e)),
-      ParseResult::Done(header, tail) => ParseResult::Done(From::from(header), tail)
+      ParseResult::Ok(header, tail) => ParseResult::Ok(From::from(header), tail)
     }
   }
 }
@@ -242,12 +242,12 @@ impl Parse for DeltaHeaderParser {
       DeltaHeaderParser::Offset(delta_len, p) => match p.parse(buf) {
         ParseResult::Incomplete(p) => ParseResult::Incomplete(DeltaHeaderParser::Offset(delta_len, p)),
         ParseResult::Err(e) => ParseResult::Err(e),
-        ParseResult::Done(base, tail) => ParseResult::Done(DeltaHeader::Offset { delta_len: delta_len, base: base }, tail)
+        ParseResult::Ok(base, tail) => ParseResult::Ok(DeltaHeader::Offset { delta_len: delta_len, base: base }, tail)
       },
       DeltaHeaderParser::Reference(delta_len, p) => match p.parse(buf) {
         ParseResult::Incomplete(p) => ParseResult::Incomplete(DeltaHeaderParser::Reference(delta_len, p)),
         ParseResult::Err(e) => match e {},
-        ParseResult::Done(base, tail) => ParseResult::Done(DeltaHeader::Reference { delta_len: delta_len, base: base }, tail)
+        ParseResult::Ok(base, tail) => ParseResult::Ok(DeltaHeader::Reference { delta_len: delta_len, base: base }, tail)
       }
     }
   }
@@ -278,7 +278,7 @@ impl DeltaOffsetParser {
     };
     let off = b as u64 & 0x7F;
     if b&0x80 == 0 {
-      ParseResult::Done(off, buf.as_slice())
+      ParseResult::Ok(off, buf.as_slice())
     } else {
       Self::parse_off(off, buf.as_slice())
     }
@@ -293,7 +293,7 @@ impl DeltaOffsetParser {
       };
       off |= b as u64 & 0x7F;
       if b&0x80 == 0 {
-        return ParseResult::Done(off, buf.as_slice());
+        return ParseResult::Ok(off, buf.as_slice());
       }
     }
     ParseResult::Incomplete(DeltaOffsetParser::Offset(off))
