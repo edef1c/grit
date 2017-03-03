@@ -76,22 +76,21 @@ bytes!(11); bytes!(12); bytes!(13); bytes!(14); bytes!(15); bytes!(16); bytes!(1
 bytes!(21); bytes!(22); bytes!(23); bytes!(24); bytes!(25); bytes!(26); bytes!(27); bytes!(28); bytes!(29); bytes!(30);
 bytes!(31); bytes!(32); bytes!(33); bytes!(34); bytes!(35); bytes!(36); bytes!(37); bytes!(38); bytes!(39); bytes!(40);
 
-pub struct Pair<T, U, E>
-  where T: Parse, U: Parse + Default,
-        E: From<T::Err> + From<U::Err> + Debug {
-  state: PairState<T, U>,
+pub struct Pair<P, Q, E>
+  where P: Parse, Q: Parse + Default,
+        E: From<P::Err> + From<Q::Err> + Debug {
+  state: PairState<P, P::Output, Q>,
   _phantom: PhantomData<*const E>
 }
 
-enum PairState<T: Parse, U> {
-  First(T),
-  Second(T::Output, U)
+enum PairState<P, T, Q> {
+  First(P),
+  Second(T, Q)
 }
 
-
-impl<T, U, E> Default for Pair<T, U, E>
-  where T: Parse + Default, U: Parse + Default,
-        E: From<T::Err> + From<U::Err> + Debug {
+impl<P, Q, E> Default for Pair<P, Q, E>
+  where P: Parse + Default, Q: Parse + Default,
+        E: From<P::Err> + From<Q::Err> + Debug {
   fn default() -> Self {
     Pair {
       state: PairState::First(Default::default()),
@@ -100,10 +99,10 @@ impl<T, U, E> Default for Pair<T, U, E>
   }
 }
 
-impl<T, U, E> Parse for Pair<T, U, E>
-  where T: Parse, U: Parse + Default,
-        E: From<T::Err> + From<U::Err> + Debug {
-  type Output = (T::Output, U::Output);
+impl<P, Q, E> Parse for Pair<P, Q, E>
+  where P: Parse, Q: Parse + Default,
+        E: From<P::Err> + From<Q::Err> + Debug {
+  type Output = (P::Output, Q::Output);
   type Err = E;
   fn parse(self, buf: &[u8]) -> ParseResult<Self> {
     match self.state {
@@ -113,20 +112,20 @@ impl<T, U, E> Parse for Pair<T, U, E>
   }
 }
 
-impl<T, U, E> Pair<T, U, E>
-  where T: Parse, U: Parse + Default,
-        E: From<T::Err> + From<U::Err> + Debug {
-  fn wrap(state: PairState<T, U>) -> Pair<T, U, E> {
+impl<P, Q, E> Pair<P, Q, E>
+  where P: Parse, Q: Parse + Default,
+        E: From<P::Err> + From<Q::Err> + Debug {
+  fn wrap(state: PairState<P, P::Output, Q>) -> Pair<P, Q, E> {
     Pair { state: state, _phantom: PhantomData }
   }
-  fn parse_fst(p: T, buf: &[u8]) -> ParseResult<Self> {
+  fn parse_fst(p: P, buf: &[u8]) -> ParseResult<Self> {
     match p.parse(buf) {
       Result::Incomplete(p) => Result::Incomplete(Pair::wrap(PairState::First(p))),
       Result::Err(e) => Result::Err(From::from(e)),
       Result::Ok(fst, tail) => Pair::parse_snd(fst, Default::default(), tail)
     }
   }
-  fn parse_snd(fst: T::Output, p: U, buf: &[u8]) -> ParseResult<Self> {
+  fn parse_snd(fst: P::Output, p: Q, buf: &[u8]) -> ParseResult<Self> {
     match p.parse(buf) {
       Result::Incomplete(p) => Result::Incomplete(Pair::wrap(PairState::Second(fst, p))),
       Result::Err(e) => Result::Err(From::from(e)),
