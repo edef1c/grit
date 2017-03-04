@@ -6,7 +6,7 @@ use void::Void;
 use gulp::{Parse, ParseResult};
 use core::fmt;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum ObjectKind {
   Commit,
   Tree,
@@ -25,7 +25,7 @@ impl ObjectKind {
   }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct ObjectHeader {
   pub kind: ObjectKind,
   pub size: u64
@@ -34,7 +34,7 @@ pub struct ObjectHeader {
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct ObjectId(pub [u8; 20]);
 
-#[derive(Default)]
+#[derive(Default, Debug, Eq, PartialEq)]
 pub struct ObjectIdParser(gulp::Bytes<[u8; 20]>);
 
 impl Parse for ObjectIdParser {

@@ -6,13 +6,13 @@ extern crate safe_shl;
 
 use gulp::{Parse, ParseResult};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Header {
   pub base_len:   u64,
   pub result_len: u64
 }
 
- #[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct InvalidHeader(());
 
 impl From<gulp::Overflow> for InvalidHeader {
@@ -21,7 +21,7 @@ impl From<gulp::Overflow> for InvalidHeader {
   }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug, Eq, PartialEq)]
 pub struct HeaderParser(gulp::Pair<gulp::Leb128, gulp::Leb128, gulp::Overflow>);
 
 impl Parse for HeaderParser {
@@ -36,7 +36,7 @@ impl Parse for HeaderParser {
   }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Command {
   Insert { len: u8 },
   Copy { off: u32, len: u32 }
@@ -51,7 +51,7 @@ impl Command {
   }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct InvalidCommand(());
 
 impl From<gulp::Overflow> for InvalidCommand {
@@ -60,8 +60,10 @@ impl From<gulp::Overflow> for InvalidCommand {
   }
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct CommandParser(CommandParserState);
 
+#[derive(Debug, Eq, PartialEq)]
 enum CommandParserState {
   Fresh,
   CopyOff(VarintParser),
@@ -115,6 +117,7 @@ impl CommandParser {
   }
 }
 
+#[derive(Debug, Eq, PartialEq)]
 struct VarintParser {
   bitmap: u8,
   n: u64,

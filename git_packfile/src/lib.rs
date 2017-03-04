@@ -9,14 +9,15 @@ extern crate git;
 
 use gulp::{Parse, ParseResult};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct FileHeader {
   pub count: u32
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct InvalidFileHeader(());
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct FileHeaderParser(FileHeaderParserState);
 
 impl Default for FileHeaderParser {
@@ -25,6 +26,7 @@ impl Default for FileHeaderParser {
   }
 }
 
+#[derive(Debug, Eq, PartialEq)]
 enum FileHeaderParserState {
   Tag(usize),
   Count(gulp::Bytes<[u8; 4]>)
@@ -70,7 +72,7 @@ impl FileHeaderParser {
   }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EntryHeader {
   Object(git::ObjectHeader),
   Delta(DeltaHeader)
@@ -93,7 +95,7 @@ impl EntryHeader {
   }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EntryKind {
   Object(git::ObjectKind),
   Delta(DeltaKind)
@@ -113,8 +115,10 @@ impl Default for EntryHeaderParser {
   }
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct EntryHeaderParser(EntryHeaderParserState);
 
+#[derive(Debug, Eq, PartialEq)]
 enum EntryHeaderParserState {
   Fresh,
   Size(EntryKind, gulp::Leb128),
@@ -178,7 +182,7 @@ impl EntryHeaderParser {
   }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct InvalidEntryHeader(());
 
 impl From<gulp::Overflow> for InvalidEntryHeader {
@@ -193,13 +197,13 @@ impl From<InvalidDeltaHeader> for InvalidEntryHeader {
   }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum DeltaHeader {
   Offset    { delta_len: u64, base: u64 },
   Reference { delta_len: u64, base: git::ObjectId }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum DeltaKind {
   Offset,
   Reference
@@ -220,6 +224,7 @@ impl DeltaHeader {
   }
 }
 
+#[derive(Debug, Eq, PartialEq)]
 enum DeltaHeaderParser {
   Offset(u64, DeltaOffsetParser),
   Reference(u64, git::ObjectIdParser)
@@ -253,6 +258,7 @@ impl Parse for DeltaHeaderParser {
   }
 }
 
+#[derive(Debug, Eq, PartialEq)]
 enum DeltaOffsetParser {
   Fresh,
   Offset(u64)

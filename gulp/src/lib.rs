@@ -138,7 +138,7 @@ impl<P, Q, E> Pair<P, Q, E>
   }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Eq, PartialEq)]
 pub struct Leb128 {
   shift: u8,
   value: u64
@@ -153,7 +153,7 @@ impl Leb128 {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Overflow;
 
 impl Parse for Leb128 {
