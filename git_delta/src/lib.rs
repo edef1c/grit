@@ -118,7 +118,8 @@ impl CommandParser {
 struct VarintParser {
   bitmap: u8,
   n: u64,
-  i: core::ops::Range<u8>
+  i: u8,
+  len: u8
 }
 
 impl VarintParser {
@@ -126,7 +127,8 @@ impl VarintParser {
     VarintParser {
       bitmap: bitmap,
       n: 0,
-      i: 0..length
+      i: 0,
+      len: length
     }
   }
 }
@@ -136,10 +138,10 @@ impl Parse for VarintParser {
   type Err = gulp::Overflow;
   fn parse(mut self, buf: &[u8]) -> ParseResult<Self> {
     let mut iter = buf.iter();
-    while let Some(i) = self.i.next() {
+    while self.i < self.len {
       if self.bitmap&1 != 0 {
         match iter.next() {
-          Some(&b) => match safe_shl::u64(b as u64, i as u32 * 8) {
+          Some(&b) => match safe_shl::u64(b as u64, self.i as u32 * 8) {
             Some(m) => self.n |= m,
             None => return gulp::Result::Err(gulp::Overflow)
           },
@@ -147,6 +149,7 @@ impl Parse for VarintParser {
         }
       }
       self.bitmap >>= 1;
+      self.i += 1;
     }
     gulp::Result::Ok((self.n, self.bitmap), iter.as_slice())
   }
