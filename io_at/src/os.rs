@@ -23,8 +23,8 @@ impl<T: AsRawFd> Fd<T> {
 impl<T: AsRawFd> ReadAt for Fd<T> {
   type Err = io::Error;
   fn read_at(&self, off: u64, buf: &mut [u8]) -> io::Result<usize> {
-    if off > i64::MAX as u64 {
-      return Err(io::Error::from_raw_os_error(EINVAL));
+    if off >= i64::MAX as u64 {
+      return Ok(0);
     }
     let ret = unsafe { pread(self.inner.as_raw_fd(), buf.as_mut_ptr() as *mut c_void, buf.len(), off as i64) };
     if ret < 0 {
