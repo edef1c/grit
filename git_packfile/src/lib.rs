@@ -163,7 +163,7 @@ impl EntryHeaderParser {
   fn parse_size(kind: EntryKind, p: gulp::Leb128, buf: &[u8]) -> ParseResult<Self> {
     match p.parse(buf) {
       gulp::Result::Incomplete(p) => gulp::Result::Incomplete(EntryHeaderParser(EntryHeaderParserState::Size(kind, p))),
-      gulp::Result::Err(e) => gulp::Result::Err(From::from(e)),
+      gulp::Result::Err(gulp::Overflow) => gulp::Result::Err(InvalidEntryHeader(())),
       gulp::Result::Ok(size, tail) => EntryHeaderParser::parse_tail(kind, size, tail)
     }
   }
@@ -176,7 +176,7 @@ impl EntryHeaderParser {
   fn parse_delta(p: DeltaHeaderParser, buf: &[u8]) -> ParseResult<Self> {
     match p.parse(buf) {
       gulp::Result::Incomplete(p) => gulp::Result::Incomplete(EntryHeaderParser(EntryHeaderParserState::Delta(p))),
-      gulp::Result::Err(e) => gulp::Result::Err(From::from(e)),
+      gulp::Result::Err(InvalidDeltaHeader) => gulp::Result::Err(InvalidEntryHeader(())),
       gulp::Result::Ok(header, tail) => gulp::Result::Ok(From::from(header), tail)
     }
   }
@@ -184,18 +184,6 @@ impl EntryHeaderParser {
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct InvalidEntryHeader(());
-
-impl From<gulp::Overflow> for InvalidEntryHeader {
-  fn from(_: gulp::Overflow) -> InvalidEntryHeader {
-    InvalidEntryHeader(())
-  }
-}
-
-impl From<InvalidDeltaHeader> for InvalidEntryHeader {
-  fn from(_: InvalidDeltaHeader) -> InvalidEntryHeader {
-    InvalidEntryHeader(())
-  }
-}
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum DeltaHeader {
@@ -294,7 +282,7 @@ impl DeltaOffsetParser {
     while let Some(&b) = buf.next() {
       off += 1;
       off = match safe_shl::u64(off, 7) {
-        None => return gulp::Result::Err(InvalidDeltaHeader(())),
+        None => return gulp::Result::Err(InvalidDeltaHeader),
         Some(off) => off
       };
       off |= b as u64 & 0x7F;
@@ -307,4 +295,4 @@ impl DeltaOffsetParser {
 }
 
 #[derive(Copy, Clone, Debug)]
-struct InvalidDeltaHeader(());
+struct InvalidDeltaHeader;

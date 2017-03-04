@@ -15,12 +15,6 @@ pub struct Header {
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct InvalidHeader(());
 
-impl From<gulp::Overflow> for InvalidHeader {
-  fn from(_: gulp::Overflow) -> InvalidHeader {
-    InvalidHeader(())
-  }
-}
-
 #[derive(Default, Debug, Eq, PartialEq)]
 pub struct HeaderParser(gulp::Pair<gulp::Leb128, gulp::Leb128>);
 
@@ -53,12 +47,6 @@ impl Command {
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct InvalidCommand(());
-
-impl From<gulp::Overflow> for InvalidCommand {
-  fn from(_: gulp::Overflow) -> InvalidCommand {
-    InvalidCommand(())
-  }
-}
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct CommandParser(CommandParserState);
