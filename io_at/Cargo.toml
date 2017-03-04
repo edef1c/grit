@@ -5,6 +5,7 @@ authors = ["edef"]
 
 [dependencies]
 libc = "*"
+void = "*"
 
 [features]
 default = ["std"]
