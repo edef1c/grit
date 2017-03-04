@@ -48,3 +48,40 @@ impl ReadAt for [u8] {
     Ok(len)
   }
 }
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct SectionReader<R: ReadAt> {
+  inner: R,
+  off: u64,
+  len: u64
+}
+
+impl<R: ReadAt> SectionReader<R> {
+  pub fn new(inner: R, offset: u64, length: u64) -> SectionReader<R> {
+    offset.checked_add(length).expect("overflow");
+    SectionReader {
+      inner: inner,
+      off: offset,
+      len: length
+    }
+  }
+  pub fn len(&self) -> u64 {
+    self.len
+  }
+  pub fn unwrap(self) -> R {
+    self.inner
+  }
+}
+
+impl<R: ReadAt> ReadAt for SectionReader<R> {
+  type Err = R::Err;
+  fn read_at(&self, off: u64, buf: &mut [u8]) -> Result<usize, R::Err> {
+    match (self.off.checked_add(off), self.len.checked_sub(off)) {
+      (Some(off), Some(len)) => {
+        let buf = if buf.len() as u64 > len { &mut buf[..len as usize] } else { buf };
+        self.inner.read_at(off, buf)
+      }
+      _ => Ok(0)
+    }
+  }
+}
