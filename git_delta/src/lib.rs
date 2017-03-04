@@ -22,7 +22,7 @@ impl From<gulp::Overflow> for InvalidHeader {
 }
 
 #[derive(Default, Debug, Eq, PartialEq)]
-pub struct HeaderParser(gulp::Pair<gulp::Leb128, gulp::Leb128, gulp::Overflow>);
+pub struct HeaderParser(gulp::Pair<gulp::Leb128, gulp::Leb128>);
 
 impl Parse for HeaderParser {
   type Err = InvalidHeader;

@@ -5,8 +5,6 @@ extern crate safe_shl;
 
 use void::Void;
 use core::fmt::Debug;
-use core::convert::From;
-use core::marker::PhantomData;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Result<'a, P, T, E> {
@@ -79,61 +77,41 @@ bytes!(21); bytes!(22); bytes!(23); bytes!(24); bytes!(25); bytes!(26); bytes!(2
 bytes!(31); bytes!(32); bytes!(33); bytes!(34); bytes!(35); bytes!(36); bytes!(37); bytes!(38); bytes!(39); bytes!(40);
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct Pair<P, Q, E>
-  where P: Parse, Q: Parse + Default,
-        E: From<P::Err> + From<Q::Err> + Debug {
-  state: PairState<P, P::Output, Q>,
-  _phantom: PhantomData<*const E>
+pub enum Pair<P, Q> where P: Parse {
+  Fst(P),
+  Snd(P::Output, Q)
 }
 
-#[derive(Debug, Eq, PartialEq)]
-enum PairState<P, T, Q> {
-  First(P),
-  Second(T, Q)
-}
-
-impl<P, Q, E> Default for Pair<P, Q, E>
-  where P: Parse + Default, Q: Parse + Default,
-        E: From<P::Err> + From<Q::Err> + Debug {
+impl<P, Q> Default for Pair<P, Q> where P: Parse + Default {
   fn default() -> Self {
-    Pair {
-      state: PairState::First(Default::default()),
-      _phantom: PhantomData
-    }
+    Pair::Fst(P::default())
   }
 }
 
-impl<P, Q, E> Parse for Pair<P, Q, E>
-  where P: Parse, Q: Parse + Default,
-        E: From<P::Err> + From<Q::Err> + Debug {
+impl<P, Q> Parse for Pair<P, Q> where P: Parse, Q: Parse<Err=P::Err> + Default {
   type Output = (P::Output, Q::Output);
-  type Err = E;
+  type Err = P::Err;
   fn parse(self, buf: &[u8]) -> ParseResult<Self> {
-    match self.state {
-      PairState::First(p) => Pair::parse_fst(p, buf),
-      PairState::Second(fst, p) => Pair::parse_snd(fst, p, buf)
+    match self {
+      Pair::Fst(p)    => Pair::parse_fst(p, buf),
+      Pair::Snd(x, p) => Pair::parse_snd(x, p, buf)
     }
   }
 }
 
-impl<P, Q, E> Pair<P, Q, E>
-  where P: Parse, Q: Parse + Default,
-        E: From<P::Err> + From<Q::Err> + Debug {
-  fn wrap(state: PairState<P, P::Output, Q>) -> Pair<P, Q, E> {
-    Pair { state: state, _phantom: PhantomData }
-  }
+impl<P, Q> Pair<P, Q> where P: Parse, Q: Parse<Err=P::Err> + Default {
   fn parse_fst(p: P, buf: &[u8]) -> ParseResult<Self> {
     match p.parse(buf) {
-      Result::Incomplete(p) => Result::Incomplete(Pair::wrap(PairState::First(p))),
-      Result::Err(e) => Result::Err(From::from(e)),
-      Result::Ok(fst, tail) => Pair::parse_snd(fst, Default::default(), tail)
+      Result::Incomplete(p) => Result::Incomplete(Pair::Fst(p)),
+      Result::Err(e)        => Result::Err(e),
+      Result::Ok(x, tail)   => Pair::parse_snd(x, Q::default(), tail)
     }
   }
-  fn parse_snd(fst: P::Output, p: Q, buf: &[u8]) -> ParseResult<Self> {
-    match p.parse(buf) {
-      Result::Incomplete(p) => Result::Incomplete(Pair::wrap(PairState::Second(fst, p))),
-      Result::Err(e) => Result::Err(From::from(e)),
-      Result::Ok(snd, tail) => Result::Ok((fst, snd), tail)
+  fn parse_snd(x: P::Output, q: Q, buf: &[u8]) -> ParseResult<Self> {
+    match q.parse(buf) {
+      Result::Incomplete(q) => Result::Incomplete(Pair::Snd(x, q)),
+      Result::Err(e)        => Result::Err(e),
+      Result::Ok(y, tail)   => Result::Ok((x, y), tail)
     }
   }
 }
