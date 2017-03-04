@@ -188,24 +188,26 @@ impl<Base: Read + Seek, Delta: BufRead> Read for DeltaReader<Base, Delta> {
 }
 
 fn parse_from_buf_reader<R: io::BufRead, P: Parse + Default>(mut r: R) -> io::Result<Option<P::Output>> {
-  let mut acc = vec![];
+  let mut first = true;
+  let mut parser = P::default();
   loop {
-    let buf_len = {
+    let (res, n) = {
       let buf = try!(r.fill_buf());
-      acc.extend_from_slice(buf);
       if buf.len() == 0 {
-        if acc.len() == 0 { return Ok(None) };
+        if first { return Ok(None) };
         panic!("parse_from_buf_reader: unexpected EOF");
       }
-      buf.len()
-    };
-    match P::default().parse(&acc) {
-      gulp::Result::Incomplete(_) => r.consume(buf_len),
-      gulp::Result::Err(e) => panic!("parse_from_buf_reader: {:?}", e),
-      gulp::Result::Ok(value, tail) => {
-        r.consume(buf_len - tail.len());
-        return Ok(Some(value));
+      match parser.parse(buf) {
+        gulp::Result::Incomplete(p) => (Err(p), buf.len()),
+        gulp::Result::Err(e) => panic!("parse_from_buf_reader: {:?}", e),
+        gulp::Result::Ok(v, tail) => (Ok(v), buf.len() - tail.len())
       }
+    };
+    r.consume(n);
+    match res {
+      Ok(v) => return Ok(Some(v)),
+      Err(p) => parser = p
     }
+    first = false;
   }
 }
