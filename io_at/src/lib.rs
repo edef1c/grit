@@ -68,7 +68,7 @@ impl<R: ReadAt> SectionReader<R> {
   pub fn len(&self) -> u64 {
     self.len
   }
-  pub fn unwrap(self) -> R {
+  pub fn into_inner(self) -> R {
     self.inner
   }
 }
