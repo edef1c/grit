@@ -1,0 +1,22 @@
+
+[package]
+name = "git_packfile-fuzz"
+version = "0.0.1"
+authors = ["Automatically generated"]
+publish = false
+
+[dependencies]
+git_packfile = { path = ".." }
+gulp = { path = "../../gulp" }
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "file_header_parser"
+path = "fuzzers/file_header_parser.rs"
+
+[[bin]]
+name = "entry_header_parser"
+path = "fuzzers/entry_header_parser.rs"
