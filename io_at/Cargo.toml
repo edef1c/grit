@@ -4,9 +4,9 @@ version = "0.1.0"
 authors = ["edef"]
 
 [dependencies]
-libc = "*"
+libc = { version = "*", optional = true }
 void = "*"
 
 [features]
 default = ["std"]
-std = []
+std = ["libc"]
