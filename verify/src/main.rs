@@ -161,7 +161,6 @@ impl<Base: Read + Seek, Delta: BufRead> Read for DeltaReader<Base, Delta> {
   fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
     if self.command.len() == 0 {
       match try!(parse_from_buf_reader::<_, git_delta::CommandParser>(&mut self.delta)) {
-      // match try!(from_buf_reader(&mut self.delta)) {
         Some(c) => { self.command = c; self.seek = true },
         None => return Ok(0)
       };
