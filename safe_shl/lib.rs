@@ -1,4 +1,6 @@
 #![no_std]
+//! Shift `lhs` left by `rhs` bits, returning `None` instead
+//! if that drops any nonzero bits.
 
 macro_rules! ty {
   ($ty:ident) => {
