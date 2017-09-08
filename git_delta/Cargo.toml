@@ -4,4 +4,4 @@ version = "0.1.0"
 
 [dependencies]
 gulp = { path = "../gulp" }
-safe_shl = { path = "../safe_shl" }
+safe_shl = "*"

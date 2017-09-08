@@ -5,7 +5,7 @@ authors = ["edef"]
 
 [dependencies]
 void = "*"
-safe_shl = { path = "../safe_shl" }
+safe_shl = "*"
 byteorder = "*"
 gulp = { path = "../gulp" }
 git = { path = "../git" }
