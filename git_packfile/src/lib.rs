@@ -1,7 +1,6 @@
 #![no_std]
 mod std { pub use core::*; }
 
-extern crate void;
 extern crate safe_shl;
 extern crate gulp;
 extern crate byteorder;

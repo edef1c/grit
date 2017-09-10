@@ -4,7 +4,6 @@ version = "0.1.0"
 authors = ["edef"]
 
 [dependencies]
-void = "*"
 safe_shl = "*"
 byteorder = "*"
 gulp = { path = "../gulp" }
