@@ -4,6 +4,7 @@ extern crate void;
 extern crate safe_shl;
 
 use void::Void;
+use safe_shl::SafeShl;
 use core::fmt::Debug;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -140,7 +141,7 @@ impl Parse for Leb128 {
   fn parse(mut self, buf: &[u8]) -> ParseResult<Self> {
     let mut buf = buf.iter();
     while let Some(&b) = buf.next() {
-      match safe_shl::u64(b as u64 & 0x7F, self.shift as u32) {
+      match (b as u64 & 0x7F).safe_shl(self.shift as u32) {
         None => return Result::Err(Overflow),
         Some(v) => self.value |= v
       }

@@ -4,6 +4,7 @@ mod std { pub use core::*; }
 extern crate gulp;
 extern crate safe_shl;
 
+use safe_shl::SafeShl;
 use gulp::{Parse, ParseResult};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -132,7 +133,7 @@ impl Parse for VarintParser {
     while self.i < self.len {
       if self.bitmap&1 != 0 {
         match iter.next() {
-          Some(&b) => match safe_shl::u64(b as u64, self.i as u32 * 8) {
+          Some(&b) => match (b as u64).safe_shl(self.i as u32 * 8) {
             Some(m) => self.n |= m,
             None => return gulp::Result::Err(gulp::Overflow)
           },

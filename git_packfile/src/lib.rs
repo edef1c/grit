@@ -7,6 +7,7 @@ extern crate gulp;
 extern crate byteorder;
 extern crate git;
 
+use safe_shl::SafeShl;
 use gulp::{Parse, ParseResult};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -281,7 +282,7 @@ impl DeltaOffsetParser {
     let mut buf = buf.iter();
     while let Some(&b) = buf.next() {
       off += 1;
-      off = match safe_shl::u64(off, 7) {
+      off = match off.safe_shl(7) {
         None => return gulp::Result::Err(InvalidDeltaHeader),
         Some(off) => off
       };

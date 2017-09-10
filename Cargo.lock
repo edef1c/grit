@@ -52,7 +52,7 @@ name = "git_delta"
 version = "0.1.0"
 dependencies = [
  "gulp 0.1.0",
- "safe_shl 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "safe_shl 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -62,15 +62,14 @@ dependencies = [
  "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "git 0.1.0",
  "gulp 0.1.0",
- "safe_shl 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "safe_shl 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "gulp"
 version = "0.1.0"
 dependencies = [
- "safe_shl 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "safe_shl 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -125,7 +124,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "safe_shl"
-version = "1.0.0"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -149,6 +148,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum miniz-sys 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)" = "28eaee17666671fa872e567547e8428e83308ebe5808cdf6a0e28397dbe2c726"
 "checksum nodrop 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)" = "0dbbadd3f4c98dea0bd3d9b4be4c0cdaf1ab57035cb2e41fce3983db5add7cc5"
 "checksum odds 0.2.25 (registry+https://github.com/rust-lang/crates.io-index)" = "c3df9b730298cea3a1c3faa90b7e2f9df3a9c400d0936d6015e6165734eefcba"
-"checksum safe_shl 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ac0ae6a98875249fa7602c678c0c32d9ab4c9456b07faffee565eeb82dd84d96"
+"checksum safe_shl 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "078a49842294800a1b50ab8b99f2ce58e551c05d283edfd64741456f68cc4d45"
 "checksum sha1 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "cc30b1e1e8c40c121ca33b86c23308a090d19974ef001b4bf6e61fd1a0fb095c"
 "checksum void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
