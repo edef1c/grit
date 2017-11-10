@@ -1,16 +1,3 @@
-[root]
-name = "verify"
-version = "0.1.0"
-dependencies = [
- "flate2 0.2.17 (registry+https://github.com/rust-lang/crates.io-index)",
- "git 0.1.0",
- "git_delta 0.1.0",
- "git_packfile 0.1.0",
- "gulp 0.1.0",
- "hexdump 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sha1 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
 [[package]]
 name = "arrayvec"
 version = "0.3.20"
@@ -131,6 +118,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "sha1"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "verify"
+version = "0.1.0"
+dependencies = [
+ "flate2 0.2.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "git 0.1.0",
+ "git_delta 0.1.0",
+ "git_packfile 0.1.0",
+ "gulp 0.1.0",
+ "hexdump 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sha1 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "void"
