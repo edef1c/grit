@@ -60,7 +60,7 @@ impl<R: ReadAt> SectionReader<R> {
   pub fn new(inner: R, offset: u64, length: u64) -> SectionReader<R> {
     offset.checked_add(length).expect("overflow");
     SectionReader {
-      inner: inner,
+      inner,
       off: offset,
       len: length
     }

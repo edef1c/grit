@@ -26,7 +26,7 @@ impl Parse for HeaderParser {
     match self.0.parse(buf) {
       gulp::Result::Incomplete(p) => gulp::Result::Incomplete(HeaderParser(p)),
       gulp::Result::Err(gulp::Overflow) => gulp::Result::Err(InvalidHeader(())),
-      gulp::Result::Ok((base_len, result_len), tail) => gulp::Result::Ok(Header { base_len: base_len, result_len: result_len }, tail)
+      gulp::Result::Ok((base_len, result_len), tail) => gulp::Result::Ok(Header { base_len, result_len }, tail)
     }
   }
 }
@@ -84,7 +84,7 @@ impl CommandParser {
       None => gulp::Result::Incomplete(CommandParser(CommandParserState::Fresh)),
       Some(&b) => match b {
         0 => gulp::Result::Err(InvalidCommand(())),
-        len if len&0x80 == 0 => gulp::Result::Ok(Command::Insert { len: len }, buf.as_slice()),
+        len if len&0x80 == 0 => gulp::Result::Ok(Command::Insert { len }, buf.as_slice()),
         bitmap => CommandParser::parse_copy_off(VarintParser::new(bitmap, 4), buf.as_slice())
       }
     }
@@ -117,7 +117,7 @@ struct VarintParser {
 impl VarintParser {
   fn new(bitmap: u8, length: u8) -> VarintParser {
     VarintParser {
-      bitmap: bitmap,
+      bitmap,
       n: 0,
       i: 0,
       len: length

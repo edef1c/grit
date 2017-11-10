@@ -13,7 +13,7 @@ pub struct Fd<T: AsRawFd> {
 
 impl<T: AsRawFd> Fd<T> {
   pub fn new(inner: T) -> Fd<T> {
-    Fd { inner: inner }
+    Fd { inner }
   }
   pub fn unwrap(self) -> T {
     self.inner

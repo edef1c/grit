@@ -64,7 +64,7 @@ fn main() {
     io::copy(&mut body, &mut hasher).unwrap();
     let Sha1Writer(hasher, _) = hasher;
     let object_id = git::ObjectId(hasher.digest().bytes());
-    objects.add(PackfileIndexEntry { id: object_id, offset: position, kind: kind });
+    objects.add(PackfileIndexEntry { id: object_id, offset: position, kind });
     let object_path = full_path_for_object_id(object_id);
     fs::File::open(object_path).unwrap();
 
@@ -143,14 +143,14 @@ struct DeltaReader<Base: Read + Seek, Delta: BufRead> {
   delta: Delta,
   header: git_delta::Header,
   command: git_delta::Command,
-  seek: bool,
+  seek: bool
 }
 
 impl<Base: Read + Seek, Delta: BufRead> DeltaReader<Base, Delta> {
   pub fn new(base: Base, mut delta: Delta) -> io::Result<Option<DeltaReader<Base, Delta>>> {
     parse_from_buf_reader::<_, git_delta::HeaderParser>(&mut delta)
       .map(|header| header
-      .map(|header| DeltaReader { base: base, delta: delta, header: header, command: git_delta::Command::Insert { len: 0 }, seek: false }))
+      .map(|header| DeltaReader { base, delta, header, command: git_delta::Command::Insert { len: 0 }, seek: false }))
   }
   pub fn header(&self) -> git_delta::Header {
     self.header

@@ -66,7 +66,7 @@ impl FileHeaderParser {
       gulp::Result::Ok(count, tail) => {
         use byteorder::ByteOrder;
         let count = byteorder::NetworkEndian::read_u32(&count);
-        gulp::Result::Ok(FileHeader { count: count }, tail)
+        gulp::Result::Ok(FileHeader { count }, tail)
       }
     }
   }
@@ -169,7 +169,7 @@ impl EntryHeaderParser {
   }
   fn parse_tail(kind: EntryKind, size: u64, buf: &[u8]) -> ParseResult<Self> {
     match kind {
-      EntryKind::Object(kind) => gulp::Result::Ok(From::from(git::ObjectHeader { kind: kind, size: size }), buf),
+      EntryKind::Object(kind) => gulp::Result::Ok(From::from(git::ObjectHeader { kind, size }), buf),
       EntryKind::Delta(kind)  => EntryHeaderParser::parse_delta(DeltaHeaderParser::new(size, kind), buf)
     }
   }
@@ -235,12 +235,12 @@ impl Parse for DeltaHeaderParser {
       DeltaHeaderParser::Offset(delta_len, p) => match p.parse(buf) {
         gulp::Result::Incomplete(p) => gulp::Result::Incomplete(DeltaHeaderParser::Offset(delta_len, p)),
         gulp::Result::Err(e) => gulp::Result::Err(e),
-        gulp::Result::Ok(base, tail) => gulp::Result::Ok(DeltaHeader::Offset { delta_len: delta_len, base: base }, tail)
+        gulp::Result::Ok(base, tail) => gulp::Result::Ok(DeltaHeader::Offset { delta_len, base }, tail)
       },
       DeltaHeaderParser::Reference(delta_len, p) => match p.parse(buf) {
         gulp::Result::Incomplete(p) => gulp::Result::Incomplete(DeltaHeaderParser::Reference(delta_len, p)),
         gulp::Result::Err(e) => match e {},
-        gulp::Result::Ok(base, tail) => gulp::Result::Ok(DeltaHeader::Reference { delta_len: delta_len, base: base }, tail)
+        gulp::Result::Ok(base, tail) => gulp::Result::Ok(DeltaHeader::Reference { delta_len, base }, tail)
       }
     }
   }

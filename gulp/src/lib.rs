@@ -125,10 +125,7 @@ pub struct Leb128 {
 
 impl Leb128 {
   pub fn new(shift: u8, value: u64) -> Leb128 {
-    Leb128 {
-      shift: shift,
-      value: value
-    }
+    Leb128 { shift, value }
   }
 }
 
