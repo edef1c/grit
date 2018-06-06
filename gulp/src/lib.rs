@@ -14,7 +14,7 @@ pub enum Result<'a, P, T, E> {
   Err(E)
 }
 
-pub type ParseResult<'a, P: Parse> = Result<'a, P, P::Output, P::Err>;
+pub type ParseResult<'a, P> = Result<'a, P, <P as Parse>::Output, <P as Parse>::Err>;
 
 pub trait Parse: Sized {
   type Err: Debug;
