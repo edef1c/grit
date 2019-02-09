@@ -2,6 +2,7 @@
 name = "io_at"
 version = "0.1.0"
 authors = ["edef"]
+edition = "2018"
 
 [dependencies]
 libc = { version = "*", optional = true }

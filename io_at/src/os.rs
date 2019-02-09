@@ -1,11 +1,8 @@
-extern crate libc;
-extern crate std;
-
-use {ReadAt, WriteAt};
+use crate::{ReadAt, WriteAt};
 use core::i64;
-use self::std::os::unix::io::AsRawFd;
-use self::std::io;
-use self::libc::{pread, pwrite, EINVAL, c_void};
+use std::os::unix::io::AsRawFd;
+use std::io;
+use libc::{pread, pwrite, EINVAL, c_void};
 
 pub struct Fd<T: AsRawFd> {
   inner: T

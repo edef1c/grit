@@ -1,11 +1,6 @@
 #![no_std]
 mod std { pub use core::*; }
 
-extern crate safe_shl;
-extern crate gulp;
-extern crate byteorder;
-extern crate git;
-
 use safe_shl::SafeShl;
 use gulp::{Parse, ParseResult};
 

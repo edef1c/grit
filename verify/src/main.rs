@@ -1,11 +1,3 @@
-extern crate gulp;
-extern crate git;
-extern crate git_delta;
-extern crate git_packfile;
-extern crate hexdump;
-extern crate flate2;
-extern crate sha1;
-
 use std::{io, fs};
 use std::io::{Read, BufRead, Write, Seek, SeekFrom};
 use std::fmt::Write as FmtWrite;
@@ -160,7 +152,7 @@ impl<Base: Read + Seek, Delta: BufRead> DeltaReader<Base, Delta> {
 impl<Base: Read + Seek, Delta: BufRead> Read for DeltaReader<Base, Delta> {
   fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
     if self.command.len() == 0 {
-      match try!(parse_from_buf_reader::<_, git_delta::CommandParser>(&mut self.delta)) {
+      match parse_from_buf_reader::<_, git_delta::CommandParser>(&mut self.delta)? {
         Some(c) => { self.command = c; self.seek = true },
         None => return Ok(0)
       };
@@ -168,17 +160,17 @@ impl<Base: Read + Seek, Delta: BufRead> Read for DeltaReader<Base, Delta> {
     match self.command {
       git_delta::Command::Insert { ref mut len } => {
         let mut r = (&mut self.delta).take(*len as u64);
-        let n = try!(r.read(buf));
+        let n = r.read(buf)?;
         *len -= n as u8;
         Ok(n)
       }
       git_delta::Command::Copy { ref mut len, off } => {
         if self.seek {
-          try!(self.base.seek(SeekFrom::Start(off as u64)));
+          self.base.seek(SeekFrom::Start(off as u64))?;
           self.seek = false;
         }
         let mut r = (&mut self.base).take(*len as u64);
-        let n = try!(r.read(buf));
+        let n = r.read(buf)?;
         *len -= n as u32;
         Ok(n)
       }
@@ -191,7 +183,7 @@ fn parse_from_buf_reader<R: io::BufRead, P: Parse + Default>(mut r: R) -> io::Re
   let mut parser = P::default();
   loop {
     let (res, n) = {
-      let buf = try!(r.fill_buf());
+      let buf = r.fill_buf()?;
       if buf.len() == 0 {
         if first { return Ok(None) };
         panic!("parse_from_buf_reader: unexpected EOF");

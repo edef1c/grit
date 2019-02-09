@@ -1,6 +1,4 @@
 #![no_std]
-extern crate void;
-extern crate gulp;
 
 use void::Void;
 use gulp::{Parse, ParseResult};
@@ -53,7 +51,7 @@ impl fmt::Display for ObjectId {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let &ObjectId(ref bytes) = self;
     for &b in bytes.iter() {
-      try!(write!(f, "{:02x}", b));
+      write!(f, "{:02x}", b)?;
     }
     Ok(())
   }

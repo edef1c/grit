@@ -1,5 +1,4 @@
-#![no_std]
-extern crate void;
+#![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "std")]
 pub use os::Fd;

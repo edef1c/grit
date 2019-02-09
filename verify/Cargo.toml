@@ -2,6 +2,7 @@
 name = "verify"
 version = "0.1.0"
 authors = ["edef"]
+edition = "2018"
 
 [dependencies]
 gulp = { path = "../gulp" }

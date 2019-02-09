@@ -1,8 +1,5 @@
 #![no_std]
 
-extern crate void;
-extern crate safe_shl;
-
 use void::Void;
 use safe_shl::SafeShl;
 use core::fmt::Debug;
@@ -19,7 +16,7 @@ pub type ParseResult<'a, P> = Result<'a, P, <P as Parse>::Output, <P as Parse>::
 pub trait Parse: Sized {
   type Err: Debug;
   type Output;
-  fn parse(self, &[u8]) -> ParseResult<Self>;
+  fn parse(self, buffer: &[u8]) -> ParseResult<Self>;
 }
 
 #[derive(Debug, Eq, PartialEq)]
