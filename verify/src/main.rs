@@ -11,10 +11,10 @@ fn full_path_for_object_id(object_id: git::ObjectId) -> String {
 
 fn main() {
   let mut r = fs::File::open(PACK_PATH).map(io::BufReader::new).unwrap();
-  let mut file_header: git_packfile::FileHeader = parse_from_buf_reader::<_, git_packfile::FileHeaderParser>(&mut r).unwrap().unwrap();
+  let mut file_header = git_packfile::FileHeaderParser::parse_from_reader(&mut r).unwrap().unwrap();
   writeln!(io::stderr(), "{:?}", file_header).unwrap();
   let mut objects = PackfileIndex::new();
-  while let (position, Some(entry_header)) = (r.seek(SeekFrom::Current(0)).unwrap(), parse_from_buf_reader::<_, git_packfile::EntryHeaderParser>(&mut r).unwrap()) {
+  while let (position, Some(entry_header)) = (r.seek(SeekFrom::Current(0)).unwrap(), git_packfile::EntryHeaderParser::parse_from_reader(&mut r).unwrap()) {
     writeln!(io::stderr(), "{:?}", entry_header).unwrap();
     let mut body = flate2::bufread::ZlibDecoder::new(&mut r);
     let mut hasher = Sha1Writer(sha1::Sha1::new(), io::sink());
@@ -140,7 +140,7 @@ struct DeltaReader<Base: Read + Seek, Delta: BufRead> {
 
 impl<Base: Read + Seek, Delta: BufRead> DeltaReader<Base, Delta> {
   pub fn new(base: Base, mut delta: Delta) -> io::Result<Option<DeltaReader<Base, Delta>>> {
-    parse_from_buf_reader::<_, git_delta::HeaderParser>(&mut delta)
+    git_delta::HeaderParser::parse_from_reader(&mut delta)
       .map(|header| header
       .map(|header| DeltaReader { base, delta, header, command: git_delta::Command::Insert { len: 0 }, seek: false }))
   }
@@ -152,7 +152,7 @@ impl<Base: Read + Seek, Delta: BufRead> DeltaReader<Base, Delta> {
 impl<Base: Read + Seek, Delta: BufRead> Read for DeltaReader<Base, Delta> {
   fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
     if self.command.len() == 0 {
-      match parse_from_buf_reader::<_, git_delta::CommandParser>(&mut self.delta)? {
+      match git_delta::CommandParser::parse_from_reader(&mut self.delta)? {
         Some(c) => { self.command = c; self.seek = true },
         None => return Ok(0)
       };
@@ -178,28 +178,32 @@ impl<Base: Read + Seek, Delta: BufRead> Read for DeltaReader<Base, Delta> {
   }
 }
 
-fn parse_from_buf_reader<R: io::BufRead, P: Parse + Default>(mut r: R) -> io::Result<Option<P::Output>> {
-  let mut parser = None::<P>;
-  loop {
-    let buf = r.fill_buf()?;
-    if buf.len() == 0 {
-      if parser.is_none() {
-          return Ok(None);
+trait ParseExt: Parse {
+    fn parse_from_reader<R: io::BufRead>(mut r: R) -> io::Result<Option<Self::Output>> where Self: Default {
+      let mut parser = None::<Self>;
+      loop {
+        let buf = r.fill_buf()?;
+        if buf.len() == 0 {
+          if parser.is_none() {
+              return Ok(None);
+          }
+          panic!("parse_from_buf_reader: unexpected EOF");
+        }
+        match parser.unwrap_or_default().parse(buf) {
+          gulp::Result::Incomplete(p) => {
+              parser = Some(p);
+              let len = buf.len();
+              r.consume(len);
+          }
+          gulp::Result::Err(e) => panic!("parse_from_buf_reader: {:?}", e),
+          gulp::Result::Ok(v, tail) => {
+              let len = buf.len() - tail.len();
+              r.consume(len);
+              return Ok(Some(v));
+          }
+        }
       }
-      panic!("parse_from_buf_reader: unexpected EOF");
     }
-    match parser.unwrap_or_default().parse(buf) {
-      gulp::Result::Incomplete(p) => {
-          parser = Some(p);
-          let len = buf.len();
-          r.consume(len);
-      }
-      gulp::Result::Err(e) => panic!("parse_from_buf_reader: {:?}", e),
-      gulp::Result::Ok(v, tail) => {
-          let len = buf.len() - tail.len();
-          r.consume(len);
-          return Ok(Some(v));
-      }
-    }
-  }
 }
+
+impl<P: Parse> ParseExt for P {}
