@@ -5,5 +5,5 @@ authors = ["edef"]
 edition = "2018"
 
 [dependencies]
-void = "*"
+void = { version = "*", default-features = false }
 gulp = { path = "../gulp" }
