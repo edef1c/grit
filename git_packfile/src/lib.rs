@@ -1,5 +1,4 @@
 #![no_std]
-mod std { pub use core::*; }
 
 use safe_shl::SafeShl;
 use gulp::{Parse, ParseResult};
