@@ -1,10 +1,12 @@
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 use core::fmt::Debug;
 use failure::Fail;
 pub use parsers::*;
+#[cfg(feature = "std")] pub use io::*;
 
 mod parsers;
+#[cfg(feature = "std")] mod io;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Result<'a, P, T, E> {

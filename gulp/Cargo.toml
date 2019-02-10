@@ -8,3 +8,6 @@ edition = "2018"
 void = { version = "*", default-features = false }
 failure = { version = "*", default-features = false, features = ["derive"] }
 safe_shl = "*"
+
+[features]
+std = ["failure/std"]
