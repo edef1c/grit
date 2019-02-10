@@ -5,10 +5,11 @@ authors = ["edef"]
 edition = "2018"
 
 [dependencies]
-gulp = { path = "../gulp" }
+gulp = { path = "../gulp", features = ["std"] }
 git = { path = "../git" }
 git_delta = { path = "../git_delta" }
 git_packfile = { path = "../git_packfile" }
 hexdump = "*"
 flate2 = "*"
 sha1 = "*"
+failure = "*"

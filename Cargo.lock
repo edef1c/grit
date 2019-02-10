@@ -259,6 +259,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "verify"
 version = "0.1.0"
 dependencies = [
+ "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "flate2 0.2.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "git 0.1.0",
  "git_delta 0.1.0",
