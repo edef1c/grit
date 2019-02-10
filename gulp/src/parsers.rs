@@ -1,8 +1,10 @@
 use void::Void;
+use failure::Fail;
 use safe_shl::SafeShl;
 use crate::{Parse, Result, ParseResult};
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Fail, Eq, PartialEq)]
+#[fail(display = "varint overflows u64")]
 pub struct Overflow;
 
 #[derive(Default, Debug, Eq, PartialEq)]

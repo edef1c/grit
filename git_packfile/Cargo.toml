@@ -7,5 +7,6 @@ edition = "2018"
 [dependencies]
 safe_shl = "*"
 byteorder = "*"
+failure = { version = "*", default-features = false, features = ["derive"] }
 gulp = { path = "../gulp" }
 git = { path = "../git" }

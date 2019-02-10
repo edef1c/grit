@@ -1,6 +1,7 @@
 #![no_std]
 
 use core::fmt::Debug;
+use failure::Fail;
 pub use parsers::*;
 
 mod parsers;
@@ -15,7 +16,7 @@ pub enum Result<'a, P, T, E> {
 pub type ParseResult<'a, P> = Result<'a, P, <P as Parse>::Output, <P as Parse>::Err>;
 
 pub trait Parse: Sized {
-  type Err: Debug;
+  type Err: Fail;
   type Output;
   fn parse(self, buffer: &[u8]) -> ParseResult<Self>;
 }

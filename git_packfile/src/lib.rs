@@ -1,5 +1,6 @@
 #![no_std]
 
+use failure::Fail;
 use safe_shl::SafeShl;
 use gulp::{Parse, ParseResult};
 
@@ -8,7 +9,8 @@ pub struct FileHeader {
   pub count: u32
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Fail, Eq, PartialEq)]
+#[fail(display = "invalid file header")]
 pub struct InvalidFileHeader(());
 
 #[derive(Debug, Eq, PartialEq)]
@@ -176,7 +178,8 @@ impl EntryHeaderParser {
   }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Fail, Eq, PartialEq)]
+#[fail(display = "invalid entry header")]
 pub struct InvalidEntryHeader(());
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -288,5 +291,6 @@ impl DeltaOffsetParser {
   }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Fail)]
+#[fail(display = "invalid delta header")]
 struct InvalidDeltaHeader;

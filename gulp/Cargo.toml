@@ -6,4 +6,5 @@ edition = "2018"
 
 [dependencies]
 void = { version = "*", default-features = false }
+failure = { version = "*", default-features = false, features = ["derive"] }
 safe_shl = "*"

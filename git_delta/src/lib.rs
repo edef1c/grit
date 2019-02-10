@@ -1,5 +1,6 @@
 #![no_std]
 
+use failure::Fail;
 use safe_shl::SafeShl;
 use gulp::{Parse, ParseResult};
 
@@ -9,7 +10,8 @@ pub struct Header {
   pub result_len: u64
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Fail, Eq, PartialEq)]
+#[fail(display = "invalid delta header")]
 pub struct InvalidHeader(());
 
 #[derive(Default, Debug, Eq, PartialEq)]
@@ -42,7 +44,8 @@ impl Command {
   }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Fail, Eq, PartialEq)]
+#[fail(display = "invalid delta command")]
 pub struct InvalidCommand(());
 
 #[derive(Debug, Eq, PartialEq)]
