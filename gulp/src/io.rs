@@ -11,6 +11,16 @@ pub enum IoError<E: Fail> {
     UnexpectedEof
 }
 
+impl<E: Fail> From<IoError<E>> for io::Error {
+    fn from(e: IoError<E>) -> io::Error {
+        match e {
+            IoError::Parse(e) => io::Error::new(io::ErrorKind::InvalidInput, e.compat()),
+            IoError::Io(e) => e,
+            IoError::UnexpectedEof => io::Error::new(io::ErrorKind::UnexpectedEof, e.compat())
+        }
+    }
+}
+
 pub type IoResult<T, E> = std::result::Result<T, IoError<E>>;
 
 pub fn from_reader<P: crate::Parse, R: io::BufRead, F: FnOnce() -> P>(mut reader: R, construct: F) -> IoResult<Option<P::Output>, P::Err> {
