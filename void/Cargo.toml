@@ -8,6 +8,9 @@ description = "The uninhabited void type for use in statically impossible cases.
 readme = "README.md"
 license = "MIT / Apache-2.0"
 
+[dependencies]
+failure = { version = "*", default-features = false }
+
 [features]
 
 default = ["std"]

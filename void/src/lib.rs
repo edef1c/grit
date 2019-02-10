@@ -69,6 +69,9 @@ impl error::Error for Void {
     }
 }
 
+#[cfg(not(feature = "std"))]
+impl failure::Fail for Void {}
+
 /// A safe version of `intrinsincs::unreachable`.
 ///
 /// If this typechecks, anything that causes this to run is unreachable code.
