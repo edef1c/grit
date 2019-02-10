@@ -183,9 +183,15 @@ impl EntryHeaderParser {
 pub struct InvalidEntryHeader(());
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum DeltaHeader {
-  Offset    { delta_len: u64, base: u64 },
-  Reference { delta_len: u64, base: git::ObjectId }
+pub struct DeltaHeader {
+  pub delta_len: u64,
+  pub base: DeltaBase
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum DeltaBase {
+    Offset(u64),
+    Reference(git::ObjectId)
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -196,18 +202,13 @@ pub enum DeltaKind {
 
 impl DeltaHeader {
   pub fn kind(&self) -> DeltaKind {
-    match *self {
-      DeltaHeader::Offset    { .. } => DeltaKind::Offset,
-      DeltaHeader::Reference { .. } => DeltaKind::Reference
-    }
-  }
-  pub fn delta_len(&self) -> u64 {
-    match *self {
-      DeltaHeader::Offset    { delta_len, .. } => delta_len,
-      DeltaHeader::Reference { delta_len, .. } => delta_len
+    match self.base {
+      DeltaBase::Offset    { .. } => DeltaKind::Offset,
+      DeltaBase::Reference { .. } => DeltaKind::Reference
     }
   }
 }
+
 
 #[derive(Debug, Eq, PartialEq)]
 enum DeltaHeaderParser {
@@ -232,12 +233,12 @@ impl Parse for DeltaHeaderParser {
       DeltaHeaderParser::Offset(delta_len, p) => match p.parse(buf) {
         gulp::Result::Incomplete(p) => gulp::Result::Incomplete(DeltaHeaderParser::Offset(delta_len, p)),
         gulp::Result::Err(e) => gulp::Result::Err(e),
-        gulp::Result::Ok(base, tail) => gulp::Result::Ok(DeltaHeader::Offset { delta_len, base }, tail)
+        gulp::Result::Ok(base, tail) => gulp::Result::Ok(DeltaHeader { delta_len, base: DeltaBase::Offset(base) }, tail)
       },
       DeltaHeaderParser::Reference(delta_len, p) => match p.parse(buf) {
         gulp::Result::Incomplete(p) => gulp::Result::Incomplete(DeltaHeaderParser::Reference(delta_len, p)),
         gulp::Result::Err(e) => match e {},
-        gulp::Result::Ok(base, tail) => gulp::Result::Ok(DeltaHeader::Reference { delta_len, base }, tail)
+        gulp::Result::Ok(base, tail) => gulp::Result::Ok(DeltaHeader { delta_len, base: DeltaBase::Reference(base) }, tail)
       }
     }
   }

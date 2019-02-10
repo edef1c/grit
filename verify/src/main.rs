@@ -23,14 +23,14 @@ fn main() {
         (object_header.kind, object_header.size, &mut body)
       }
       git_packfile::EntryHeader::Delta(delta) => {
-        let (base_id, kind) = match delta {
-          git_packfile::DeltaHeader::Reference { base, .. } => {
+        let (base_id, kind) = match delta.base {
+          git_packfile::DeltaBase::Reference(base) => {
             match objects.find_by_id(base) {
               Some(entry) => (base, entry.kind),
               None => panic!("couldn't find base object {}", base)
             }
           },
-          git_packfile::DeltaHeader::Offset { base, .. } => {
+          git_packfile::DeltaBase::Offset(base) => {
             let base_position = position - base;
             match objects.find_by_offset(base_position) {
               Some(entry) => (entry.id, entry.kind),
