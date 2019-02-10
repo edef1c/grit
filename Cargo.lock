@@ -43,7 +43,7 @@ name = "git"
 version = "0.1.0"
 dependencies = [
  "gulp 0.1.0",
- "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "void 1.0.2",
 ]
 
 [[package]]
@@ -87,7 +87,7 @@ name = "gulp"
 version = "0.1.0"
 dependencies = [
  "safe_shl 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "void 1.0.2",
 ]
 
 [[package]]
@@ -104,7 +104,7 @@ name = "io_at"
 version = "0.1.0"
 dependencies = [
  "libc 0.2.20 (registry+https://github.com/rust-lang/crates.io-index)",
- "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "void 1.0.2",
 ]
 
 [[package]]
@@ -174,7 +174,6 @@ dependencies = [
 [[package]]
 name = "void"
 version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [metadata]
 "checksum arbitrary 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "6c7d1523aa3a127adf8b27af2404c03c12825b4c4d0698f01648d63fa9df62ee"
@@ -192,4 +191,3 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum odds 0.2.25 (registry+https://github.com/rust-lang/crates.io-index)" = "c3df9b730298cea3a1c3faa90b7e2f9df3a9c400d0936d6015e6165734eefcba"
 "checksum safe_shl 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "078a49842294800a1b50ab8b99f2ce58e551c05d283edfd64741456f68cc4d45"
 "checksum sha1 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "cc30b1e1e8c40c121ca33b86c23308a090d19974ef001b4bf6e61fd1a0fb095c"
-"checksum void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"

@@ -9,3 +9,6 @@ members = [
     "git_packfile/fuzz",
     "verify"
 ]
+
+[patch.crates-io]
+void = { path = "void" }
