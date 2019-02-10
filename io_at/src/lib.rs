@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+use failure::Fail;
 
 #[cfg(feature = "std")]
 pub use os::Fd;
@@ -6,12 +7,11 @@ pub use os::Fd;
 #[cfg(feature = "std")]
 mod os;
 
-use core::fmt::Debug;
 use core::cmp::max;
 use void::Void;
 
 pub trait ReadAt {
-  type Err: Debug;
+  type Err: Fail;
   fn read_at(&self, off: u64, buf: &mut [u8]) -> Result<usize, Self::Err>;
 }
 
@@ -23,7 +23,7 @@ impl<'a, R: ReadAt> ReadAt for &'a R {
 }
 
 pub trait WriteAt {
-  type Err: Debug;
+  type Err: Fail;
   fn write_at(&self, off: u64, buf: &[u8]) -> Result<usize, Self::Err>;
 }
 
