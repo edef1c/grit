@@ -32,7 +32,11 @@ pub fn split_fuzz<'a, P: Parse + Default>(data: &'a [u8]) where ParseResult<'a, 
   let incremental = match P::default().parse(&data[..n]) {
     Result::Err(e) => Result::Err(e),
     Result::Incomplete(p) => p.parse(&data[n..]),
-    Result::Ok(v, tail) => Result::Ok(v, &data[n - tail.len()..])
+    Result::Ok(v, tail) => {
+        let m = n - tail.len();
+        assert_eq!(tail, &data[m..n]);
+        Result::Ok(v, &data[m..])
+    }
   };
   assert_eq!(immediate, incremental);
 }
