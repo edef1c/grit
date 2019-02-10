@@ -46,7 +46,7 @@ fn main() {
           r.read_to_end(&mut buf).unwrap();
           io::Cursor::new(buf)
         };
-        delta_body = DeltaReader::new(base, io::BufReader::new(body)).unwrap().unwrap();
+        delta_body = git_delta::DeltaReader::new(base, io::BufReader::new(body)).unwrap().unwrap();
         let size = delta_body.header().result_len;
         (kind, size, &mut delta_body)
       }
@@ -127,53 +127,4 @@ fn path_for_object_id(git::ObjectId(bytes): git::ObjectId) -> String {
     write!(result, "{:02x}", b).unwrap();
   }
   result
-}
-
-struct DeltaReader<Base: Read + Seek, Delta: BufRead> {
-  base: Base,
-  delta: Delta,
-  header: git_delta::Header,
-  command: git_delta::Command,
-  seek: bool
-}
-
-impl<Base: Read + Seek, Delta: BufRead> DeltaReader<Base, Delta> {
-  pub fn new(base: Base, mut delta: Delta) -> io::Result<Option<DeltaReader<Base, Delta>>> {
-    gulp::from_reader(&mut delta, git_delta::HeaderParser::default)
-      .map(|header| header
-      .map(|header| DeltaReader { base, delta, header, command: git_delta::Command::Insert { len: 0 }, seek: false }))
-      .map_err(From::from)
-  }
-  pub fn header(&self) -> git_delta::Header {
-    self.header
-  }
-}
-
-impl<Base: Read + Seek, Delta: BufRead> Read for DeltaReader<Base, Delta> {
-  fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-    if self.command.len() == 0 {
-      match gulp::from_reader(&mut self.delta, git_delta::CommandParser::default)? {
-        Some(c) => { self.command = c; self.seek = true },
-        None => return Ok(0)
-      };
-    }
-    match self.command {
-      git_delta::Command::Insert { ref mut len } => {
-        let mut r = (&mut self.delta).take(*len as u64);
-        let n = r.read(buf)?;
-        *len -= n as u8;
-        Ok(n)
-      }
-      git_delta::Command::Copy { ref mut len, off } => {
-        if self.seek {
-          self.base.seek(SeekFrom::Start(off as u64))?;
-          self.seek = false;
-        }
-        let mut r = (&mut self.base).take(*len as u64);
-        let n = r.read(buf)?;
-        *len -= n as u32;
-        Ok(n)
-      }
-    }
-  }
 }

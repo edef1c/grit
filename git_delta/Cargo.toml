@@ -7,3 +7,6 @@ edition = "2018"
 gulp = { path = "../gulp" }
 safe_shl = "*"
 failure = { version = "*", default-features = false, features = ["derive"] }
+
+[features]
+std = ["gulp/std", "failure/std"]
