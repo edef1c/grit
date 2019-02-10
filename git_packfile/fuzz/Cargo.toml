@@ -14,10 +14,6 @@ git_packfile = { path = ".." }
 gulp = { path = "../../gulp" }
 libfuzzer-sys = { git = "https://github.com/rust-fuzz/libfuzzer-sys.git" }
 
-# Prevent this from interfering with workspaces
-[workspace]
-members = ["."]
-
 [[bin]]
 name = "file_header_parser"
 path = "fuzzers/file_header_parser.rs"

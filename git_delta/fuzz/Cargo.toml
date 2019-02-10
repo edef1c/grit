@@ -13,10 +13,6 @@ gulp = { path = "../../gulp" }
 git_delta = { path = ".." }
 libfuzzer-sys = { git = "https://github.com/rust-fuzz/libfuzzer-sys.git" }
 
-# Prevent this from interfering with workspaces
-[workspace]
-members = ["."]
-
 [[bin]]
 name = "header_parser"
 path = "fuzzers/header_parser.rs"

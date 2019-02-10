@@ -1,2 +1,11 @@
 [workspace]
-members = [ "io_at", "gulp", "git", "git_delta", "git_packfile", "verify" ]
+members = [
+    "io_at",
+    "gulp",
+    "git",
+    "git_delta",
+    "git_delta/fuzz",
+    "git_packfile",
+    "git_packfile/fuzz",
+    "verify"
+]
