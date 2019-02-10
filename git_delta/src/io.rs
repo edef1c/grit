@@ -10,11 +10,9 @@ pub struct DeltaReader<Base: Read + Seek, Delta: BufRead> {
 }
 
 impl<Base: Read + Seek, Delta: BufRead> DeltaReader<Base, Delta> {
-  pub fn new(base: Base, mut delta: Delta) -> io::Result<Option<DeltaReader<Base, Delta>>> {
-    gulp::from_reader(&mut delta, HeaderParser::default)
-      .map(|header| header
-      .map(|header| DeltaReader { base, delta, header, command: Command::Insert { len: 0 }, seek: false }))
-      .map_err(From::from)
+  pub fn new(base: Base, mut delta: Delta) -> io::Result<DeltaReader<Base, Delta>> {
+    let header = gulp::from_reader(&mut delta, HeaderParser::default)?;
+    Ok(DeltaReader { base, delta, header, command: Command::Insert { len: 0 }, seek: false })
   }
   pub fn header(&self) -> Header {
     self.header
@@ -24,7 +22,7 @@ impl<Base: Read + Seek, Delta: BufRead> DeltaReader<Base, Delta> {
 impl<Base: Read + Seek, Delta: BufRead> Read for DeltaReader<Base, Delta> {
   fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
     if self.command.len() == 0 {
-      match gulp::from_reader(&mut self.delta, CommandParser::default)? {
+      match gulp::next_from_reader(&mut self.delta, CommandParser::default)? {
         Some(c) => { self.command = c; self.seek = true },
         None => return Ok(0)
       };

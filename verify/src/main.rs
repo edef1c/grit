@@ -10,10 +10,10 @@ fn full_path_for_object_id(object_id: git::ObjectId) -> String {
 
 fn main() {
   let mut r = fs::File::open(PACK_PATH).map(io::BufReader::new).unwrap();
-  let mut file_header = gulp::from_reader(&mut r, git_packfile::FileHeaderParser::default).unwrap().unwrap();
+  let mut file_header = gulp::from_reader(&mut r, git_packfile::FileHeaderParser::default).unwrap();
   writeln!(io::stderr(), "{:?}", file_header).unwrap();
   let mut objects = PackfileIndex::new();
-  while let (position, Some(entry_header)) = (r.seek(SeekFrom::Current(0)).unwrap(), gulp::from_reader(&mut r, git_packfile::EntryHeaderParser::default).unwrap()) {
+  while let (position, Some(entry_header)) = (r.seek(SeekFrom::Current(0)).unwrap(), gulp::next_from_reader(&mut r, git_packfile::EntryHeaderParser::default).unwrap()) {
     writeln!(io::stderr(), "{:?}", entry_header).unwrap();
     let mut body = flate2::bufread::ZlibDecoder::new(&mut r);
     let mut hasher = Sha1Writer(sha1::Sha1::new(), io::sink());
@@ -46,7 +46,7 @@ fn main() {
           r.read_to_end(&mut buf).unwrap();
           io::Cursor::new(buf)
         };
-        delta_body = git_delta::DeltaReader::new(base, io::BufReader::new(body)).unwrap().unwrap();
+        delta_body = git_delta::DeltaReader::new(base, io::BufReader::new(body)).unwrap();
         let size = delta_body.header().result_len;
         (kind, size, &mut delta_body)
       }
