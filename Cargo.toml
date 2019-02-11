@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "io_at",
+    "sha1dc",
     "gulp",
     "git",
     "git_delta",

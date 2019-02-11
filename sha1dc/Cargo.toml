@@ -1,0 +1,8 @@
+[package]
+name = "sha1dc"
+version = "0.1.0"
+authors = ["edef <edef@edef.eu>"]
+edition = "2018"
+
+[build-dependencies]
+cc = "*"
