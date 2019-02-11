@@ -10,11 +10,16 @@ fn full_path_for_object_id(object_id: git::ObjectId) -> String {
 
 fn main() {
   let mut r = fs::File::open(PACK_PATH).map(io::BufReader::new).unwrap();
-  let mut file_header = gulp::from_reader(&mut r, git_packfile::FileHeaderParser::default).unwrap();
+
+  let file_header = gulp::from_reader(&mut r, git_packfile::FileHeaderParser::default).unwrap();
   writeln!(io::stderr(), "{:?}", file_header).unwrap();
   let mut objects = PackfileIndex::new();
-  while let (position, Some(entry_header)) = (r.seek(SeekFrom::Current(0)).unwrap(), gulp::next_from_reader(&mut r, git_packfile::EntryHeaderParser::default).unwrap()) {
+
+  for _ in 0..file_header.count {
+    let position = r.seek(SeekFrom::Current(0)).unwrap();
+    let entry_header = gulp::from_reader(&mut r, git_packfile::EntryHeaderParser::default).unwrap();
     writeln!(io::stderr(), "{:?}", entry_header).unwrap();
+
     let mut body = flate2::bufread::ZlibDecoder::new(&mut r);
     let mut delta_body;
     let (kind, size, mut body): (git::ObjectKind, u64, &mut Read) = match entry_header {
@@ -61,11 +66,6 @@ fn main() {
     objects.add(PackfileIndexEntry { id: object_id, offset: position, kind });
     let object_path = full_path_for_object_id(object_id);
     fs::File::open(object_path).unwrap();
-
-    file_header.count -= 1;
-    if file_header.count == 0 {
-      break;
-    }
   }
 }
 
