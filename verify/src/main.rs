@@ -63,16 +63,15 @@ fn main() {
         writer.digest()
     };
 
-    objects.add(PackfileIndexEntry { id: object_id, offset: position, kind });
+    objects.push(PackfileIndexEntry { id: object_id, offset: position, kind });
     let object_path = full_path_for_object_id(object_id);
     fs::File::open(object_path).unwrap();
   }
 }
 
 struct PackfileIndex {
-  objects: Vec<PackfileIndexEntry>,
-  by_id: Vec<usize>,
-  by_offset: Vec<usize>
+  by_offset: Vec<PackfileIndexEntry>,
+  by_id: Vec<usize>
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -85,24 +84,23 @@ struct PackfileIndexEntry {
 impl PackfileIndex {
   fn with_capacity(capacity: usize) -> PackfileIndex {
     PackfileIndex {
-      objects: Vec::with_capacity(capacity),
-      by_id: Vec::with_capacity(capacity),
-      by_offset: Vec::with_capacity(capacity)
+      by_offset: Vec::with_capacity(capacity),
+      by_id: Vec::with_capacity(capacity)
     }
   }
-  fn add(&mut self, entry: PackfileIndexEntry) {
-    let id_idx = self.by_id.binary_search_by_key(&entry.id, |&idx| self.objects[idx].id).err().unwrap();
-    let offset_idx = self.by_offset.binary_search_by_key(&entry.offset, |&idx| self.objects[idx].offset).err().unwrap();
-    let idx = self.objects.len();
-    self.by_id.insert(id_idx, idx);
-    self.by_offset.insert(offset_idx, idx);
-    self.objects.push(entry);
-  }
-  fn find_by_id(&self, id: git::ObjectId) -> Option<&PackfileIndexEntry> {
-    self.by_id.binary_search_by_key(&id, |&idx| self.objects[idx].id).ok().map(|idx| &self.objects[idx])
+  fn push(&mut self, entry: PackfileIndexEntry) {
+    let last_offset = self.by_offset.last().map(|e| e.offset);
+    assert!(last_offset < Some(entry.offset));
+
+    let id_idx = self.by_id.binary_search_by_key(&entry.id, |&idx| self.by_offset[idx].id).err().unwrap();
+    self.by_id.insert(id_idx, self.by_offset.len());
+    self.by_offset.push(entry);
   }
   fn find_by_offset(&self, offset: u64) -> Option<&PackfileIndexEntry> {
-    self.by_offset.binary_search_by_key(&offset, |&idx| self.objects[idx].offset).ok().map(|idx| &self.objects[idx])
+    self.by_offset.binary_search_by_key(&offset, |e| e.offset).ok().map(|idx| &self.by_offset[idx])
+  }
+  fn find_by_id(&self, id: git::ObjectId) -> Option<&PackfileIndexEntry> {
+    self.by_id.binary_search_by_key(&id, |&idx| self.by_offset[idx].id).ok().map(|idx| &self.by_offset[idx])
   }
 }
 
