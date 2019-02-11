@@ -13,7 +13,7 @@ fn main() {
 
   let file_header = gulp::from_reader(&mut r, git_packfile::FileHeaderParser::default).unwrap();
   writeln!(io::stderr(), "{:?}", file_header).unwrap();
-  let mut objects = PackfileIndex::new();
+  let mut objects = PackfileIndex::with_capacity(file_header.count as usize);
 
   for _ in 0..file_header.count {
     let position = r.seek(SeekFrom::Current(0)).unwrap();
@@ -83,11 +83,11 @@ struct PackfileIndexEntry {
 }
 
 impl PackfileIndex {
-  fn new() -> PackfileIndex {
+  fn with_capacity(capacity: usize) -> PackfileIndex {
     PackfileIndex {
-      objects: Vec::new(),
-      by_id: Vec::new(),
-      by_offset: Vec::new()
+      objects: Vec::with_capacity(capacity),
+      by_id: Vec::with_capacity(capacity),
+      by_offset: Vec::with_capacity(capacity)
     }
   }
   fn add(&mut self, entry: PackfileIndexEntry) {
