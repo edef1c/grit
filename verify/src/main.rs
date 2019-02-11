@@ -16,7 +16,6 @@ fn main() {
   while let (position, Some(entry_header)) = (r.seek(SeekFrom::Current(0)).unwrap(), gulp::next_from_reader(&mut r, git_packfile::EntryHeaderParser::default).unwrap()) {
     writeln!(io::stderr(), "{:?}", entry_header).unwrap();
     let mut body = flate2::bufread::ZlibDecoder::new(&mut r);
-    let mut hasher = Sha1Writer(sha1::Sha1::new(), io::sink());
     let mut delta_body;
     let (kind, size, mut body): (git::ObjectKind, u64, &mut Read) = match entry_header {
       git_packfile::EntryHeader::Object(object_header) => {
@@ -51,10 +50,14 @@ fn main() {
         (kind, size, &mut delta_body)
       }
     };
-    write!(hasher, "{} {}\u{0}", kind.name(), size).unwrap();
-    io::copy(&mut body, &mut hasher).unwrap();
-    let Sha1Writer(hasher, _) = hasher;
-    let object_id = git::ObjectId(hasher.digest().bytes());
+
+    let object_id = {
+        let hasher = git::ObjectHasher::new(git::ObjectHeader { kind, size });
+        let mut hasher = ObjectWriter(hasher, io::sink());
+        io::copy(&mut body, &mut hasher).unwrap();
+        hasher.0.digest()
+    };
+
     objects.add(PackfileIndexEntry { id: object_id, offset: position, kind });
     let object_path = full_path_for_object_id(object_id);
     fs::File::open(object_path).unwrap();
@@ -103,9 +106,9 @@ impl PackfileIndex {
   }
 }
 
-struct Sha1Writer<W: io::Write>(sha1::Sha1, W);
+struct ObjectWriter<W: io::Write>(git::ObjectHasher, W);
 
-impl<W: io::Write> io::Write for Sha1Writer<W> {
+impl<W: io::Write> io::Write for ObjectWriter<W> {
   fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
     match self.1.write(buf) {
       Ok(n) => {

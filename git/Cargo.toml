@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 void = { version = "*", default-features = false }
 gulp = { path = "../gulp" }
+sha1dc = { path = "../sha1dc" }

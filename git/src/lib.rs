@@ -2,7 +2,7 @@
 
 use void::Void;
 use gulp::{Parse, ParseResult};
-use core::fmt;
+use core::fmt::{self, Write};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum ObjectKind {
@@ -61,4 +61,20 @@ impl fmt::Debug for ObjectId {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "ObjectId({})", self)
   }
+}
+
+pub struct ObjectHasher(sha1dc::Hasher);
+
+impl ObjectHasher {
+    pub fn new(header: ObjectHeader) -> ObjectHasher {
+        let mut h = sha1dc::Hasher::new();
+        write!(h, "{} {}\u{0}", header.kind.name(), header.size).unwrap();
+        ObjectHasher(h)
+    }
+    pub fn update(&mut self, buffer: &[u8]) {
+        self.0.update(buffer)
+    }
+    pub fn digest(self) -> ObjectId {
+        ObjectId(self.0.digest())
+    }
 }

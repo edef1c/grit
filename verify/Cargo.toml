@@ -11,5 +11,4 @@ git_delta = { path = "../git_delta", features = ["std"] }
 git_packfile = { path = "../git_packfile" }
 hexdump = "*"
 flate2 = "*"
-sha1 = "*"
 failure = "*"

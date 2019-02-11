@@ -89,6 +89,7 @@ name = "git"
 version = "0.1.0"
 dependencies = [
  "gulp 0.1.0",
+ "sha1dc 0.1.0",
  "void 1.0.2",
 ]
 
@@ -225,11 +226,6 @@ version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "sha1"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
 name = "sha1dc"
 version = "0.1.0"
 dependencies = [
@@ -273,7 +269,6 @@ dependencies = [
  "git_packfile 0.1.0",
  "gulp 0.1.0",
  "hexdump 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sha1 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -325,7 +320,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum quote 0.6.11 (registry+https://github.com/rust-lang/crates.io-index)" = "cdd8e04bd9c52e0342b406469d494fcb033be4bdbe5c606016defbb1681411e1"
 "checksum rustc-demangle 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)" = "adacaae16d02b6ec37fdc7acfcddf365978de76d1983d3ee22afc260e1ca9619"
 "checksum safe_shl 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "078a49842294800a1b50ab8b99f2ce58e551c05d283edfd64741456f68cc4d45"
-"checksum sha1 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "cc30b1e1e8c40c121ca33b86c23308a090d19974ef001b4bf6e61fd1a0fb095c"
 "checksum syn 0.15.26 (registry+https://github.com/rust-lang/crates.io-index)" = "f92e629aa1d9c827b2bb8297046c1ccffc57c99b947a680d3ccff1f136a3bee9"
 "checksum synstructure 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)" = "73687139bf99285483c96ac0add482c3776528beac1d97d444f6e91f203a2015"
 "checksum unicode-xid 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "fc72304796d0818e357ead4e000d19c9c174ab23dc11093ac919054d20a6a7fc"
