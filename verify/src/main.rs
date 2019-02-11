@@ -46,7 +46,7 @@ fn main() {
           r.read_to_end(&mut buf).unwrap();
           io::Cursor::new(buf)
         };
-        delta_body = git_delta::DeltaReader::new(base, io::BufReader::new(body)).unwrap();
+        delta_body = git_delta::Reader::new(base, io::BufReader::new(body)).unwrap();
         let size = delta_body.header().result_len;
         (kind, size, &mut delta_body)
       }

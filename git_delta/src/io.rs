@@ -1,7 +1,7 @@
 use std::io::{self, BufRead, Read, Seek, SeekFrom};
 use crate::{Header, HeaderParser, Command, CommandParser};
 
-pub struct DeltaReader<Base: Read + Seek, Delta: BufRead> {
+pub struct Reader<Base: Read + Seek, Delta: BufRead> {
   base: Base,
   delta: Delta,
   header: Header,
@@ -9,17 +9,17 @@ pub struct DeltaReader<Base: Read + Seek, Delta: BufRead> {
   seek: bool
 }
 
-impl<Base: Read + Seek, Delta: BufRead> DeltaReader<Base, Delta> {
-  pub fn new(base: Base, mut delta: Delta) -> io::Result<DeltaReader<Base, Delta>> {
+impl<Base: Read + Seek, Delta: BufRead> Reader<Base, Delta> {
+  pub fn new(base: Base, mut delta: Delta) -> io::Result<Reader<Base, Delta>> {
     let header = gulp::from_reader(&mut delta, HeaderParser::default)?;
-    Ok(DeltaReader { base, delta, header, command: Command::Insert { len: 0 }, seek: false })
+    Ok(Reader { base, delta, header, command: Command::Insert { len: 0 }, seek: false })
   }
   pub fn header(&self) -> Header {
     self.header
   }
 }
 
-impl<Base: Read + Seek, Delta: BufRead> Read for DeltaReader<Base, Delta> {
+impl<Base: Read + Seek, Delta: BufRead> Read for Reader<Base, Delta> {
   fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
     if self.command.len() == 0 {
       match gulp::next_from_reader(&mut self.delta, CommandParser::default)? {
