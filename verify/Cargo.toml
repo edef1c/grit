@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 gulp = { path = "../gulp", features = ["std"] }
-git = { path = "../git" }
+git = { path = "../git", features = ["std"] }
 git_delta = { path = "../git_delta", features = ["std"] }
 git_packfile = { path = "../git_packfile" }
 hexdump = "*"

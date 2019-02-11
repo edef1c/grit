@@ -1,8 +1,11 @@
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 use void::Void;
 use gulp::{Parse, ParseResult};
 use core::fmt::{self, Write};
+
+#[cfg(feature = "std")] pub use io::*;
+#[cfg(feature = "std")] mod io;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum ObjectKind {

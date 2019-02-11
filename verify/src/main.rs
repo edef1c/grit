@@ -58,9 +58,9 @@ fn main() {
 
     let object_id = {
         let hasher = git::ObjectHasher::new(git::ObjectHeader { kind, size });
-        let mut hasher = ObjectWriter(hasher, io::sink());
-        io::copy(&mut body, &mut hasher).unwrap();
-        hasher.0.digest()
+        let mut writer = git::ObjectWriter { hasher, writer: io::sink() };
+        io::copy(&mut body, &mut writer).unwrap();
+        writer.digest()
     };
 
     objects.add(PackfileIndexEntry { id: object_id, offset: position, kind });
@@ -103,23 +103,6 @@ impl PackfileIndex {
   }
   fn find_by_offset(&self, offset: u64) -> Option<&PackfileIndexEntry> {
     self.by_offset.binary_search_by_key(&offset, |&idx| self.objects[idx].offset).ok().map(|idx| &self.objects[idx])
-  }
-}
-
-struct ObjectWriter<W: io::Write>(git::ObjectHasher, W);
-
-impl<W: io::Write> io::Write for ObjectWriter<W> {
-  fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-    match self.1.write(buf) {
-      Ok(n) => {
-        self.0.update(&buf[..n]);
-        Ok(n)
-      }
-      Err(e) => Err(e)
-    }
-  }
-  fn flush(&mut self) -> io::Result<()> {
-    self.1.flush()
   }
 }
 
