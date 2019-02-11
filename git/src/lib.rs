@@ -9,27 +9,27 @@ use core::fmt::{self, Write};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum ObjectKind {
-  Commit,
-  Tree,
-  Blob,
-  Tag
+    Commit,
+    Tree,
+    Blob,
+    Tag
 }
 
 impl ObjectKind {
-  pub fn name(&self) -> &'static str {
-    match *self {
-      ObjectKind::Commit => "commit",
-      ObjectKind::Tree   => "tree",
-      ObjectKind::Blob   => "blob",
-      ObjectKind::Tag    => "tag"
+    pub fn name(&self) -> &'static str {
+        match *self {
+            ObjectKind::Commit => "commit",
+            ObjectKind::Tree   => "tree",
+            ObjectKind::Blob   => "blob",
+            ObjectKind::Tag    => "tag"
+        }
     }
-  }
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct ObjectHeader {
-  pub kind: ObjectKind,
-  pub size: u64
+    pub kind: ObjectKind,
+    pub size: u64
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -39,31 +39,31 @@ pub struct ObjectId(pub [u8; 20]);
 pub struct ObjectIdParser(gulp::Bytes<[u8; 20]>);
 
 impl Parse for ObjectIdParser {
-  type Output = ObjectId;
-  type Err = Void;
-  fn parse(self, buf: &[u8]) -> ParseResult<Self> {
-    match self.0.parse(buf) {
-      gulp::Result::Incomplete(p) => gulp::Result::Incomplete(ObjectIdParser(p)),
-      gulp::Result::Err(e) => match e {},
-      gulp::Result::Ok(buf, tail) => gulp::Result::Ok(ObjectId(buf), tail)
+    type Output = ObjectId;
+    type Err = Void;
+    fn parse(self, buf: &[u8]) -> ParseResult<Self> {
+        match self.0.parse(buf) {
+            gulp::Result::Incomplete(p) => gulp::Result::Incomplete(ObjectIdParser(p)),
+            gulp::Result::Err(e) => match e {},
+            gulp::Result::Ok(buf, tail) => gulp::Result::Ok(ObjectId(buf), tail)
+        }
     }
-  }
 }
 
 impl fmt::Display for ObjectId {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let &ObjectId(ref bytes) = self;
-    for &b in bytes.iter() {
-      write!(f, "{:02x}", b)?;
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let &ObjectId(ref bytes) = self;
+        for &b in bytes.iter() {
+            write!(f, "{:02x}", b)?;
+        }
+        Ok(())
     }
-    Ok(())
-  }
 }
 
 impl fmt::Debug for ObjectId {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "ObjectId({})", self)
-  }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "ObjectId({})", self)
+    }
 }
 
 pub struct ObjectHasher(sha1dc::Hasher);

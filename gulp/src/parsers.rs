@@ -9,83 +9,83 @@ pub struct Overflow;
 
 #[derive(Default, Debug, Eq, PartialEq)]
 pub struct Leb128 {
-  shift: u8,
-  value: u64
+    shift: u8,
+    value: u64
 }
 
 impl Leb128 {
-  pub fn new(shift: u8, value: u64) -> Leb128 {
-    Leb128 { shift, value }
-  }
+    pub fn new(shift: u8, value: u64) -> Leb128 {
+        Leb128 { shift, value }
+    }
 }
 
 impl Parse for Leb128 {
-  type Err = Overflow;
-  type Output = u64;
-  fn parse(mut self, buf: &[u8]) -> ParseResult<Self> {
-    let mut buf = buf.iter();
-    while let Some(&b) = buf.next() {
-      match (b as u64 & 0x7F).safe_shl(self.shift as u32) {
-        None => return Result::Err(Overflow),
-        Some(v) => self.value |= v
-      }
-      if b&0x80 == 0 {
-        return Result::Ok(self.value, buf.as_slice());
-      }
-      self.shift += 7;
+    type Err = Overflow;
+    type Output = u64;
+    fn parse(mut self, buf: &[u8]) -> ParseResult<Self> {
+        let mut buf = buf.iter();
+        while let Some(&b) = buf.next() {
+            match (b as u64 & 0x7F).safe_shl(self.shift as u32) {
+                None => return Result::Err(Overflow),
+                Some(v) => self.value |= v
+            }
+            if b&0x80 == 0 {
+                return Result::Ok(self.value, buf.as_slice());
+            }
+            self.shift += 7;
+        }
+        Result::Incomplete(self)
     }
-    Result::Incomplete(self)
-  }
 }
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Bytes<T> {
-  val: T,
-  len: usize
+    val: T,
+    len: usize
 }
 
 macro_rules! bytes {
-  ($n:expr) => {
-    impl Default for Bytes<[u8; $n]> {
-      fn default() -> Self {
-        Bytes {
-          val: [0; $n],
-          len: 0
+    ($n:expr) => {
+        impl Default for Bytes<[u8; $n]> {
+            fn default() -> Self {
+                Bytes {
+                    val: [0; $n],
+                    len: 0
+                }
+            }
         }
-      }
-    }
-    impl Parse for Bytes<[u8; $n]> {
-      type Err = Void;
-      type Output = [u8; $n];
-      fn parse(mut self, buf: &[u8]) -> ParseResult<Self> {
-        let (buf, tail): (&[u8], &[u8]) = if buf.len() < ($n - self.len) { (buf, &[]) } else { buf.split_at($n - self.len) };
-        self.val[self.len..self.len + buf.len()].copy_from_slice(buf);
-        self.len += buf.len();
-        if self.len < $n {
-          Result::Incomplete(self)
-        } else {
-          Result::Ok(self.val, tail)
+        impl Parse for Bytes<[u8; $n]> {
+            type Err = Void;
+            type Output = [u8; $n];
+            fn parse(mut self, buf: &[u8]) -> ParseResult<Self> {
+                let (buf, tail): (&[u8], &[u8]) = if buf.len() < ($n - self.len) { (buf, &[]) } else { buf.split_at($n - self.len) };
+                self.val[self.len..self.len + buf.len()].copy_from_slice(buf);
+                self.len += buf.len();
+                if self.len < $n {
+                    Result::Incomplete(self)
+                } else {
+                    Result::Ok(self.val, tail)
+                }
+            }
         }
-      }
     }
-  }
 }
 
 impl Default for Bytes<[u8; 0]> {
-  fn default() -> Self {
-    Bytes {
-      val: [],
-      len: 0
+    fn default() -> Self {
+        Bytes {
+            val: [],
+            len: 0
+        }
     }
-  }
 }
 
 impl Parse for Bytes<[u8; 0]> {
-  type Err = Void;
-  type Output = [u8; 0];
-  fn parse(self, buf: &[u8]) -> ParseResult<Self> {
-    Result::Ok([], buf)
-  }
+    type Err = Void;
+    type Output = [u8; 0];
+    fn parse(self, buf: &[u8]) -> ParseResult<Self> {
+        Result::Ok([], buf)
+    }
 }
 
 bytes!( 1); bytes!( 2); bytes!( 3); bytes!( 4); bytes!( 5); bytes!( 6); bytes!( 7); bytes!( 8); bytes!( 9); bytes!(10);
@@ -95,40 +95,40 @@ bytes!(31); bytes!(32); bytes!(33); bytes!(34); bytes!(35); bytes!(36); bytes!(3
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Pair<P, Q> where P: Parse {
-  Fst(P),
-  Snd(P::Output, Q)
+    Fst(P),
+    Snd(P::Output, Q)
 }
 
 impl<P, Q> Default for Pair<P, Q> where P: Parse + Default {
-  fn default() -> Self {
-    Pair::Fst(P::default())
-  }
+    fn default() -> Self {
+        Pair::Fst(P::default())
+    }
 }
 
 impl<P, Q> Parse for Pair<P, Q> where P: Parse, Q: Parse<Err=P::Err> + Default {
-  type Output = (P::Output, Q::Output);
-  type Err = P::Err;
-  fn parse(self, buf: &[u8]) -> ParseResult<Self> {
-    match self {
-      Pair::Fst(p)    => Pair::parse_fst(p, buf),
-      Pair::Snd(x, p) => Pair::parse_snd(x, p, buf)
+    type Output = (P::Output, Q::Output);
+    type Err = P::Err;
+    fn parse(self, buf: &[u8]) -> ParseResult<Self> {
+        match self {
+            Pair::Fst(p)    => Pair::parse_fst(p, buf),
+            Pair::Snd(x, p) => Pair::parse_snd(x, p, buf)
+        }
     }
-  }
 }
 
 impl<P, Q> Pair<P, Q> where P: Parse, Q: Parse<Err=P::Err> + Default {
-  fn parse_fst(p: P, buf: &[u8]) -> ParseResult<Self> {
-    match p.parse(buf) {
-      Result::Incomplete(p) => Result::Incomplete(Pair::Fst(p)),
-      Result::Err(e)        => Result::Err(e),
-      Result::Ok(x, tail)   => Pair::parse_snd(x, Q::default(), tail)
+    fn parse_fst(p: P, buf: &[u8]) -> ParseResult<Self> {
+        match p.parse(buf) {
+            Result::Incomplete(p) => Result::Incomplete(Pair::Fst(p)),
+            Result::Err(e)        => Result::Err(e),
+            Result::Ok(x, tail)   => Pair::parse_snd(x, Q::default(), tail)
+        }
     }
-  }
-  fn parse_snd(x: P::Output, q: Q, buf: &[u8]) -> ParseResult<Self> {
-    match q.parse(buf) {
-      Result::Incomplete(q) => Result::Incomplete(Pair::Snd(x, q)),
-      Result::Err(e)        => Result::Err(e),
-      Result::Ok(y, tail)   => Result::Ok((x, y), tail)
+    fn parse_snd(x: P::Output, q: Q, buf: &[u8]) -> ParseResult<Self> {
+        match q.parse(buf) {
+            Result::Incomplete(q) => Result::Incomplete(Pair::Snd(x, q)),
+            Result::Err(e)        => Result::Err(e),
+            Result::Ok(y, tail)   => Result::Ok((x, y), tail)
+        }
     }
-  }
 }
