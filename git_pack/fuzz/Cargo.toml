@@ -1,6 +1,6 @@
 
 [package]
-name = "git_packfile-fuzz"
+name = "git_pack-fuzz"
 version = "0.0.1"
 authors = ["Automatically generated"]
 publish = false
@@ -10,7 +10,7 @@ edition = "2018"
 cargo-fuzz = true
 
 [dependencies]
-git_packfile = { path = ".." }
+git_pack = { path = ".." }
 gulp = { path = "../../gulp" }
 libfuzzer-sys = { git = "https://github.com/rust-fuzz/libfuzzer-sys.git" }
 

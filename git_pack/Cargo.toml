@@ -1,5 +1,5 @@
 [package]
-name = "git_packfile"
+name = "git_pack"
 version = "0.1.0"
 authors = ["edef"]
 edition = "2018"

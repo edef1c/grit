@@ -6,8 +6,8 @@ members = [
     "git",
     "git_delta",
     "git_delta/fuzz",
-    "git_packfile",
-    "git_packfile/fuzz",
+    "git_pack",
+    "git_pack/fuzz",
     "verify"
 ]
 
