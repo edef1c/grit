@@ -43,3 +43,15 @@ pub fn split_fuzz<'a, P: Parse + Default>(data: &'a [u8]) where ParseResult<'a, 
     };
     assert_eq!(immediate, incremental);
 }
+
+#[macro_export]
+macro_rules! split_fuzz {
+    ($p:ty) => {
+        extern crate libfuzzer_sys;
+
+        #[export_name = "rust_fuzzer_test_input"]
+        pub extern "C" fn go(data: &[u8]) {
+            $crate::split_fuzz::<$p>(data)
+        }
+    }
+}
