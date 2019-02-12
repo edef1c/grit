@@ -23,7 +23,7 @@ impl<E: Fail> From<IoError<E>> for io::Error {
 
 pub type IoResult<T, E> = std::result::Result<T, IoError<E>>;
 
-pub fn from_reader<P: crate::Parse, R: io::BufRead, F: FnOnce() -> P>(mut reader: R, construct: F) -> IoResult<P::Output, P::Err> {
+pub fn from_reader<P: crate::Parse, R: io::BufRead, F: FnOnce() -> P>(reader: R, construct: F) -> IoResult<P::Output, P::Err> {
     match next_from_reader(reader, construct) {
         Err(e) => Err(e),
         Ok(None) => Err(IoError::UnexpectedEof::<P::Err>.into()),
