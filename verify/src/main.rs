@@ -1,34 +1,9 @@
 use std::{mem, io, fs};
 use std::io::{Read, BufRead, Seek, SeekFrom};
-use std::fmt::Write as FmtWrite;
 use flate2::bufread::ZlibDecoder;
 
-const PACK_PATH: &'static str = "/home/src/local/grit/.git/objects/pack/pack-2b8d09497de5a4ec6534e696ee90b413f692d3bc.pack";
 
-fn full_path_for_object_id(object_id: git::ObjectId) -> String {
-    format!("/home/src/local/grit-bare/objects/{}", path_for_object_id(object_id))
-}
-
-fn path_for_object_id(git::ObjectId(bytes): git::ObjectId) -> String {
-    let mut result = String::new();
-    write!(result, "{:02x}/", bytes[0]).unwrap();
-    for &b in &bytes[1..] {
-        write!(result, "{:02x}", b).unwrap();
-    }
-    result
-}
-
-fn verify_object(object: git::ObjectId) {
-        let path = full_path_for_object_id(object);
-        fs::File::open(path).unwrap();
-}
-
-fn verify_object_buffer(kind: git::ObjectKind, buffer: &[u8]) {
-    let size = buffer.len() as u64;
-    let mut hasher = git::ObjectHasher::new(git::ObjectHeader { kind, size });
-    hasher.update(&buffer);
-    verify_object(hasher.digest());
-}
+const PACK_PATH: &'static str = "/home/src/android-base/.git/objects/pack/pack-c545e08123f0f1cee2b7e40c4ace577f73213498.pack";
 
 fn main() {
     let mut file = fs::File::open(PACK_PATH).map(io::BufReader::new).unwrap();
@@ -90,7 +65,6 @@ impl<R: BufRead + Seek> ObjectReader<R> {
 
         for layer_offset in self.layers.drain(..).rev() {
             mem::swap(&mut self.base, &mut self.output);
-            verify_object_buffer(kind, &self.base);
             let base = io::Cursor::new(&self.base);
 
             self.reader.seek(SeekFrom::Start(layer_offset))?;
@@ -105,8 +79,6 @@ impl<R: BufRead + Seek> ObjectReader<R> {
             hasher.update(&self.output);
             hasher.digest()
         };
-
-        verify_object(object);
 
         let idx = self.index.push(PackEntry {
             offset, object, kind, base_index,
