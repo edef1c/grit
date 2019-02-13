@@ -40,7 +40,8 @@ fn main() {
         layers: Vec::new(),
         index: PackIndex::with_capacity(file_header.count as usize)
     };
-    for _ in 0..file_header.count {
+    for n in 0..file_header.count {
+        print!("\r{} of {} ({}%)", n, file_header.count, n*100/file_header.count);
         let (_entry, _output) = reader.next().unwrap();
     }
 }
