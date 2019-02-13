@@ -1,7 +1,7 @@
 [package]
 name = "verify"
 version = "0.1.0"
-authors = ["edef"]
+authors = ["edef <edef@edef.eu>"]
 edition = "2018"
 
 [dependencies]
@@ -9,6 +9,4 @@ gulp = { path = "../gulp", features = ["std"] }
 git = { path = "../git", features = ["std"] }
 git_delta = { path = "../git_delta", features = ["std"] }
 git_pack = { path = "../git_pack" }
-hexdump = "*"
 flate2 = "*"
-failure = "*"

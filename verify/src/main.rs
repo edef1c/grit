@@ -1,107 +1,12 @@
-use std::{io, fs};
-use std::io::{Read, BufRead, Write, Seek, SeekFrom};
+use std::{mem, io, fs};
+use std::io::{Read, BufRead, Seek, SeekFrom};
 use std::fmt::Write as FmtWrite;
+use flate2::bufread::ZlibDecoder;
 
-const PACK_PATH: &'static str = "/home/edef/src/github.com/edef1c/libfringe/.git/objects/pack/pack-b452a7d6bcc41ff3e93d12ef285a17c9c04c9804.pack";
+const PACK_PATH: &'static str = "/home/src/local/grit/.git/objects/pack/pack-2b8d09497de5a4ec6534e696ee90b413f692d3bc.pack";
 
 fn full_path_for_object_id(object_id: git::ObjectId) -> String {
-    format!("/home/edef/src/github.com/edef1c/libfringe-unpacked/.git/objects/{}", path_for_object_id(object_id))
-}
-
-fn main() {
-    let mut r = fs::File::open(PACK_PATH).map(io::BufReader::new).unwrap();
-
-    let file_header = gulp::from_reader(&mut r, git_pack::FileHeaderParser::default).unwrap();
-    writeln!(io::stderr(), "{:?}", file_header).unwrap();
-    let mut objects = PackIndex::with_capacity(file_header.count as usize);
-
-    for _ in 0..file_header.count {
-        let position = r.seek(SeekFrom::Current(0)).unwrap();
-        let entry_header = gulp::from_reader(&mut r, git_pack::EntryHeaderParser::default).unwrap();
-        writeln!(io::stderr(), "{:?}", entry_header).unwrap();
-
-        let mut body = flate2::bufread::ZlibDecoder::new(&mut r);
-        let mut delta_body;
-        let (kind, size, mut body): (git::ObjectKind, u64, &mut Read) = match entry_header {
-            git_pack::EntryHeader::Object(object_header) => {
-                (object_header.kind, object_header.size, &mut body)
-            }
-            git_pack::EntryHeader::Delta(delta) => {
-                let (base_id, kind) = match delta.base {
-                    git_pack::DeltaBase::Reference(base) => {
-                        match objects.find_by_id(base) {
-                            Some(entry) => (base, entry.kind),
-                            None => panic!("couldn't find base object {}", base)
-                        }
-                    },
-                    git_pack::DeltaBase::Offset(base) => {
-                        let base_position = position - base;
-                        match objects.find_by_offset(base_position) {
-                            Some(entry) => (entry.id, entry.kind),
-                            None => panic!("couldn't find base object at {}", base_position)
-                        }
-                    }
-                };
-                let base_path = full_path_for_object_id(base_id);
-                let base = {
-                    let mut r = fs::File::open(base_path).map(flate2::read::ZlibDecoder::new).map(io::BufReader::new).unwrap();
-                    r.read_until(0, &mut Vec::new()).unwrap();
-                    let mut buf = Vec::new();
-                    r.read_to_end(&mut buf).unwrap();
-                    io::Cursor::new(buf)
-                };
-                delta_body = git_delta::Reader::new(base, io::BufReader::new(body)).unwrap();
-                let size = delta_body.header().result_len;
-                (kind, size, &mut delta_body)
-            }
-        };
-
-        let object_id = {
-            let hasher = git::ObjectHasher::new(git::ObjectHeader { kind, size });
-            let mut writer = git::ObjectWriter { hasher, writer: io::sink() };
-            io::copy(&mut body, &mut writer).unwrap();
-            writer.digest()
-        };
-
-        objects.push(PackIndexEntry { id: object_id, offset: position, kind });
-        let object_path = full_path_for_object_id(object_id);
-        fs::File::open(object_path).unwrap();
-    }
-}
-
-struct PackIndex {
-    by_offset: Vec<PackIndexEntry>,
-    by_id: Vec<usize>
-}
-
-#[derive(Copy, Clone, Debug)]
-struct PackIndexEntry {
-    offset: u64,
-    id: git::ObjectId,
-    kind: git::ObjectKind
-}
-
-impl PackIndex {
-    fn with_capacity(capacity: usize) -> PackIndex {
-        PackIndex {
-            by_offset: Vec::with_capacity(capacity),
-            by_id: Vec::with_capacity(capacity)
-        }
-    }
-    fn push(&mut self, entry: PackIndexEntry) {
-        let last_offset = self.by_offset.last().map(|e| e.offset);
-        assert!(last_offset < Some(entry.offset));
-
-        let id_idx = self.by_id.binary_search_by_key(&entry.id, |&idx| self.by_offset[idx].id).err().unwrap();
-        self.by_id.insert(id_idx, self.by_offset.len());
-        self.by_offset.push(entry);
-    }
-    fn find_by_offset(&self, offset: u64) -> Option<&PackIndexEntry> {
-        self.by_offset.binary_search_by_key(&offset, |e| e.offset).ok().map(|idx| &self.by_offset[idx])
-    }
-    fn find_by_id(&self, id: git::ObjectId) -> Option<&PackIndexEntry> {
-        self.by_id.binary_search_by_key(&id, |&idx| self.by_offset[idx].id).ok().map(|idx| &self.by_offset[idx])
-    }
+    format!("/home/src/local/grit-bare/objects/{}", path_for_object_id(object_id))
 }
 
 fn path_for_object_id(git::ObjectId(bytes): git::ObjectId) -> String {
@@ -111,4 +16,208 @@ fn path_for_object_id(git::ObjectId(bytes): git::ObjectId) -> String {
         write!(result, "{:02x}", b).unwrap();
     }
     result
+}
+
+fn verify_object(object: git::ObjectId) {
+        let path = full_path_for_object_id(object);
+        fs::File::open(path).unwrap();
+}
+
+fn verify_object_buffer(kind: git::ObjectKind, buffer: &[u8]) {
+    let size = buffer.len() as u64;
+    let mut hasher = git::ObjectHasher::new(git::ObjectHeader { kind, size });
+    hasher.update(&buffer);
+    verify_object(hasher.digest());
+}
+
+fn main() {
+    let mut file = fs::File::open(PACK_PATH).map(io::BufReader::new).unwrap();
+    let file_header = gulp::from_reader(&mut file, git_pack::FileHeaderParser::default).unwrap();
+    let mut reader = ObjectReader {
+        reader: OffsetReader::new(file),
+        base: Vec::new(),
+        output: Vec::new(),
+        layers: Vec::new(),
+        index: PackIndex::with_capacity(file_header.count as usize)
+    };
+    for _ in 0..file_header.count {
+        let (_entry, _output) = reader.next().unwrap();
+    }
+}
+
+struct ObjectReader<R: BufRead + Seek> {
+    reader: OffsetReader<R>,
+    base: Vec<u8>,
+    output: Vec<u8>,
+    layers: Vec<u64>,
+    index: PackIndex
+}
+
+impl<R: BufRead + Seek> ObjectReader<R> {
+    fn next(&mut self) -> io::Result<(&PackEntry, &[u8])> {
+        // read our entry
+        let (offset, header, body_offset) = {
+            (self.reader.offset()?,
+             gulp::from_reader(&mut self.reader, git_pack::EntryHeaderParser::default)?,
+             self.reader.offset()?)
+        };
+
+        self.layers.clear();
+        let (kind, base_index) = match header {
+            git_pack::EntryHeader::Object(object_header) => (object_header.kind, None),
+            git_pack::EntryHeader::Delta(delta_header) => {
+                self.layers.push(body_offset);
+                let base = match delta_header.base {
+                    git_pack::DeltaBase::Offset(off) => git_pack::DeltaBase::Offset(offset - off),
+                    base => base
+                };
+                let base = match self.index.resolve_base(&mut self.layers, base) {
+                    Some(b) => b,
+                    None => {
+                        println!("known entries: {:?}", self.index.by_offset);
+                        panic!("can't find base: {:?}", delta_header);
+                    }
+                };
+                let root_offset = base.root_entry.offset + base.root_entry.header_len as u64;
+                self.reader.seek(SeekFrom::Start(root_offset))?;
+                (base.root_entry.kind, Some(base.base_index))
+            }
+        };
+
+        self.output.clear();
+        ZlibDecoder::new(&mut self.reader).read_to_end(&mut self.output)?;
+
+        for layer_offset in self.layers.drain(..).rev() {
+            mem::swap(&mut self.base, &mut self.output);
+            verify_object_buffer(kind, &self.base);
+            let base = io::Cursor::new(&self.base);
+
+            self.reader.seek(SeekFrom::Start(layer_offset))?;
+            let delta = io::BufReader::new(ZlibDecoder::new(&mut self.reader));
+            self.output.clear();
+            git_delta::Reader::new(base, delta)?.read_to_end(&mut self.output)?;
+        }
+
+        let object = {
+            let size = self.output.len() as u64;
+            let mut hasher = git::ObjectHasher::new(git::ObjectHeader { kind, size });
+            hasher.update(&self.output);
+            hasher.digest()
+        };
+
+        verify_object(object);
+
+        let idx = self.index.push(PackEntry {
+            offset, object, kind, base_index,
+            header_len: (body_offset - offset) as u8,
+        });
+
+        Ok((&self.index.by_offset[idx], &self.output))
+    }
+}
+
+#[derive(Debug)]
+struct PackIndex {
+    by_offset: Vec<PackEntry>,
+    by_object: Vec<usize>
+}
+
+#[derive(Debug, Copy, Clone)]
+struct PackEntry {
+    offset: u64,
+    object: git::ObjectId,
+    header_len: u8, // length of header
+    kind: git::ObjectKind,
+    base_index: Option<usize> // index into PackIndex::by_offset
+}
+
+struct PackBase<'a> {
+    base_index: usize,
+    root_entry: &'a PackEntry
+}
+
+impl PackIndex {
+    fn with_capacity(capacity: usize) -> PackIndex {
+        PackIndex {
+            by_offset: Vec::with_capacity(capacity),
+            by_object: Vec::with_capacity(capacity)
+        }
+    }
+    fn push(&mut self, entry: PackEntry) -> usize {
+        let last_offset = self.by_offset.last().map(|e| e.offset);
+        assert!(last_offset < Some(entry.offset));
+
+        let idx = self.by_offset.len();
+        match self.by_object.binary_search_by_key(&entry.object, |&idx| self.by_offset[idx].object) {
+            Err(obj_idx) => self.by_object.insert(obj_idx, self.by_offset.len()),
+            Ok(obj_idx) => panic!("trying to push {:?}, colliding with existing {:?}", entry, self.by_offset[self.by_object[obj_idx]])
+        }
+        self.by_offset.push(entry);
+        idx
+    }
+    fn find_by_offset(&self, offset: u64) -> Option<usize> {
+        self.by_offset.binary_search_by_key(&offset, |e| e.offset).ok()
+    }
+    fn find_by_object(&self, object: git::ObjectId) -> Option<usize> {
+        self.by_object.binary_search_by_key(&object, |&idx| self.by_offset[idx].object).ok()
+    }
+    fn resolve_base(&self, layer_offsets: &mut Vec<u64>, base: git_pack::DeltaBase) -> Option<PackBase<'_>> {
+        let base_index = match base {
+            git_pack::DeltaBase::Offset(off)    => self.find_by_offset(off)?,
+            git_pack::DeltaBase::Reference(obj) => self.find_by_object(obj)?
+        };
+        let mut entry_index = base_index;
+        Some(loop {
+            let layer = &self.by_offset[entry_index];
+            entry_index = match layer.base_index {
+                None => break PackBase { base_index, root_entry: layer },
+                Some(index) => index
+            };
+            layer_offsets.push(layer.offset + layer.header_len as u64);
+        })
+    }
+}
+
+struct OffsetReader<R: BufRead + Seek> {
+    reader: R,
+    offset: Option<u64>
+}
+
+impl<R: BufRead + Seek> OffsetReader<R> {
+    fn new(reader: R) -> OffsetReader<R> {
+        OffsetReader { reader, offset: None }
+    }
+    fn offset(&mut self) -> io::Result<u64> {
+        self.seek(SeekFrom::Current(0))
+    }
+}
+
+impl<R: BufRead + Seek> Read for OffsetReader<R> {
+    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        let len = self.reader.read(buffer)?;
+        self.offset = self.offset.and_then(|off| off.checked_add(len as u64));
+        Ok(len)
+    }
+}
+
+impl<R: BufRead + Seek> BufRead for OffsetReader<R> {
+    fn fill_buf(&mut self) -> io::Result<&[u8]> {
+        self.reader.fill_buf()
+    }
+    fn consume(&mut self, amt: usize) {
+        self.reader.consume(amt);
+        self.offset = self.offset.and_then(|off| off.checked_add(amt as u64));
+    }
+}
+
+impl<R: BufRead + Seek> Seek for OffsetReader<R> {
+    fn seek(&mut self, pos: SeekFrom) -> io::Result<u64> {
+        Ok(if let (SeekFrom::Current(0), Some(offset)) = (pos, self.offset) {
+            offset
+        } else {
+            let offset = self.reader.seek(pos)?;
+            self.offset = Some(offset);
+            offset
+        })
+    }
 }
