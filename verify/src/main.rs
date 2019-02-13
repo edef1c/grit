@@ -1,7 +1,9 @@
 use std::{mem, io, fs};
 use std::io::{Read, BufRead, Seek, SeekFrom};
 use flate2::bufread::ZlibDecoder;
+use index::{PackIndex, PackEntry};
 
+mod index;
 
 const PACK_PATH: &'static str = "/home/src/android-base/.git/objects/pack/pack-c545e08123f0f1cee2b7e40c4ace577f73213498.pack";
 
@@ -86,68 +88,6 @@ impl<R: BufRead + Seek> ObjectReader<R> {
         });
 
         Ok((&self.index.by_offset[idx], &self.output))
-    }
-}
-
-#[derive(Debug)]
-struct PackIndex {
-    by_offset: Vec<PackEntry>,
-    by_object: Vec<usize>
-}
-
-#[derive(Debug, Copy, Clone)]
-struct PackEntry {
-    offset: u64,
-    object: git::ObjectId,
-    header_len: u8, // length of header
-    kind: git::ObjectKind,
-    base_index: Option<usize> // index into PackIndex::by_offset
-}
-
-struct PackBase<'a> {
-    base_index: usize,
-    root_entry: &'a PackEntry
-}
-
-impl PackIndex {
-    fn with_capacity(capacity: usize) -> PackIndex {
-        PackIndex {
-            by_offset: Vec::with_capacity(capacity),
-            by_object: Vec::with_capacity(capacity)
-        }
-    }
-    fn push(&mut self, entry: PackEntry) -> usize {
-        let last_offset = self.by_offset.last().map(|e| e.offset);
-        assert!(last_offset < Some(entry.offset));
-
-        let idx = self.by_offset.len();
-        match self.by_object.binary_search_by_key(&entry.object, |&idx| self.by_offset[idx].object) {
-            Err(obj_idx) => self.by_object.insert(obj_idx, self.by_offset.len()),
-            Ok(obj_idx) => panic!("trying to push {:?}, colliding with existing {:?}", entry, self.by_offset[self.by_object[obj_idx]])
-        }
-        self.by_offset.push(entry);
-        idx
-    }
-    fn find_by_offset(&self, offset: u64) -> Option<usize> {
-        self.by_offset.binary_search_by_key(&offset, |e| e.offset).ok()
-    }
-    fn find_by_object(&self, object: git::ObjectId) -> Option<usize> {
-        self.by_object.binary_search_by_key(&object, |&idx| self.by_offset[idx].object).ok()
-    }
-    fn resolve_base(&self, layer_offsets: &mut Vec<u64>, base: git_pack::DeltaBase) -> Option<PackBase<'_>> {
-        let base_index = match base {
-            git_pack::DeltaBase::Offset(off)    => self.find_by_offset(off)?,
-            git_pack::DeltaBase::Reference(obj) => self.find_by_object(obj)?
-        };
-        let mut entry_index = base_index;
-        Some(loop {
-            let layer = &self.by_offset[entry_index];
-            entry_index = match layer.base_index {
-                None => break PackBase { base_index, root_entry: layer },
-                Some(index) => index
-            };
-            layer_offsets.push(layer.offset + layer.header_len as u64);
-        })
     }
 }
 
