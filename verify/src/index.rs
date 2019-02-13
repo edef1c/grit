@@ -1,6 +1,8 @@
+use std::ops::Deref;
+
 #[derive(Debug)]
 pub struct PackIndex {
-    pub by_offset: Vec<PackEntry>,
+    by_offset: Vec<PackEntry>,
     by_object: Vec<usize>
 }
 
@@ -25,7 +27,7 @@ impl PackIndex {
             by_object: Vec::with_capacity(capacity)
         }
     }
-    pub fn push(&mut self, entry: PackEntry) -> usize {
+    pub fn push(&mut self, entry: PackEntry) -> &PackEntry {
         let last_offset = self.by_offset.last().map(|e| e.offset);
         assert!(last_offset < Some(entry.offset));
 
@@ -35,7 +37,7 @@ impl PackIndex {
             Ok(obj_idx) => panic!("trying to push {:?}, colliding with existing {:?}", entry, self.by_offset[self.by_object[obj_idx]])
         }
         self.by_offset.push(entry);
-        idx
+        &self.by_offset[idx]
     }
     fn find_by_offset(&self, offset: u64) -> Option<usize> {
         self.by_offset.binary_search_by_key(&offset, |e| e.offset).ok()
@@ -57,5 +59,12 @@ impl PackIndex {
             };
             layer_offsets.push(layer.offset + layer.header_len as u64);
         })
+    }
+}
+
+impl Deref for PackIndex {
+    type Target = [PackEntry];
+    fn deref(&self) -> &[PackEntry] {
+        &self.by_offset
     }
 }

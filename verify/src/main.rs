@@ -52,7 +52,7 @@ impl<R: BufRead + Seek> ObjectReader<R> {
                 let base = match self.index.resolve_base(&mut self.layers, base) {
                     Some(b) => b,
                     None => {
-                        println!("known entries: {:?}", self.index.by_offset);
+                        println!("known entries: {:?}", &self.index[..]);
                         panic!("can't find base: {:?}", delta_header);
                     }
                 };
@@ -82,12 +82,12 @@ impl<R: BufRead + Seek> ObjectReader<R> {
             hasher.digest()
         };
 
-        let idx = self.index.push(PackEntry {
+        let entry = self.index.push(PackEntry {
             offset, object, kind, base_index,
             header_len: (body_offset - offset) as u8,
         });
 
-        Ok((&self.index.by_offset[idx], &self.output))
+        Ok((entry, &self.output))
     }
 }
 
