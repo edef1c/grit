@@ -1,9 +1,11 @@
+use std::collections::BTreeMap;
+use std::collections::btree_map;
 use std::ops::Deref;
 
 #[derive(Debug)]
 pub struct PackIndex {
     by_offset: Vec<PackEntry>,
-    by_object: Vec<usize>
+    by_object: BTreeMap<git::ObjectId, usize>
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -24,7 +26,7 @@ impl PackIndex {
     pub fn with_capacity(capacity: usize) -> PackIndex {
         PackIndex {
             by_offset: Vec::with_capacity(capacity),
-            by_object: Vec::with_capacity(capacity)
+            by_object: BTreeMap::new()
         }
     }
     pub fn push(&mut self, entry: PackEntry) -> &PackEntry {
@@ -32,9 +34,13 @@ impl PackIndex {
         assert!(last_offset < Some(entry.offset));
 
         let idx = self.by_offset.len();
-        match self.by_object.binary_search_by_key(&entry.object, |&idx| self.by_offset[idx].object) {
-            Err(obj_idx) => self.by_object.insert(obj_idx, self.by_offset.len()),
-            Ok(obj_idx) => panic!("trying to push {:?}, colliding with existing {:?}", entry, self.by_offset[self.by_object[obj_idx]])
+        match self.by_object.entry(entry.object) {
+            btree_map::Entry::Vacant(e) => {
+                e.insert(self.by_offset.len());
+            }
+            btree_map::Entry::Occupied(e) => {
+                panic!("trying to push {:?}, colliding with existing {:?}", entry, e.get())
+            }
         }
         self.by_offset.push(entry);
         &self.by_offset[idx]
@@ -43,7 +49,7 @@ impl PackIndex {
         self.by_offset.binary_search_by_key(&offset, |e| e.offset).ok()
     }
     fn find_by_object(&self, object: git::ObjectId) -> Option<usize> {
-        self.by_object.binary_search_by_key(&object, |&idx| self.by_offset[idx].object).ok()
+        self.by_object.get(&object).map(|&idx| idx)
     }
     pub fn resolve_base(&self, layer_offsets: &mut Vec<u64>, base: git_pack::DeltaBase) -> Option<PackBase<'_>> {
         let base_index = match base {
