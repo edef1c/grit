@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::collections::btree_map;
 use std::ops::Deref;
+use std::cell::Cell;
 
 #[derive(Debug)]
 pub struct PackIndex {
@@ -8,18 +9,25 @@ pub struct PackIndex {
     by_object: BTreeMap<git::ObjectId, usize>
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub struct PackEntry {
     pub offset: u64,
     pub object: git::ObjectId,
     pub header_len: u8, // length of header
     pub kind: git::ObjectKind,
-    pub base_index: Option<usize> // index into PackIndex::by_offset
+    pub base_index: Option<usize>, // index into PackIndex::by_offset
+    pub stats: PackStats
 }
 
 pub struct PackBase<'a> {
     pub base_index: usize,
     pub root_entry: &'a PackEntry
+}
+
+#[derive(Debug, Default)]
+pub struct PackStats {
+    pub referenced: Counter,
+    pub referenced_indirect: Counter
 }
 
 impl PackIndex {
@@ -57,6 +65,7 @@ impl PackIndex {
             git_pack::DeltaBase::Reference(obj) => self.find_by_object(obj)?
         };
         let mut layer = &self.by_offset[base_index];
+        increment(&layer.stats.referenced);
         Some(loop {
             match layer.base_index {
                 None => break PackBase { base_index, root_entry: layer },
@@ -65,6 +74,7 @@ impl PackIndex {
                     layer = &self.by_offset[index];
                 }
             }
+            increment(&layer.stats.referenced_indirect);
         })
     }
 }

@@ -1,7 +1,7 @@
 use std::{mem, io, fs};
 use std::io::{Read, BufRead, Seek, SeekFrom};
 use flate2::bufread::ZlibDecoder;
-use index::{PackIndex, PackEntry};
+use index::{PackIndex, PackEntry, PackStats};
 
 mod index;
 
@@ -85,6 +85,7 @@ impl<R: BufRead + Seek> ObjectReader<R> {
         let entry = self.index.push(PackEntry {
             offset, object, kind, base_index,
             header_len: (body_offset - offset) as u8,
+            stats: PackStats::default()
         });
 
         Ok((entry, &self.output))
