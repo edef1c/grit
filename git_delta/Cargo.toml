@@ -10,3 +10,4 @@ failure = { version = "*", default-features = false, features = ["derive"] }
 
 [features]
 std = ["gulp/std", "failure/std"]
+nightly = []

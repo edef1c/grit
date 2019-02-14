@@ -46,4 +46,14 @@ impl<Base: Read + Seek, Delta: BufRead> Read for Reader<Base, Delta> {
             }
         }
     }
+    #[cfg(feature = "nightly")]
+    unsafe fn initializer(&self) -> io::Initializer {
+        let base = self.base.initializer();
+        let delta = self.delta.initializer();
+        if base.should_initialize() || delta.should_initialize() {
+            io::Initializer::zeroing()
+        } else {
+            io::Initializer::nop()
+        }
+    }
 }

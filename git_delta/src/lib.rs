@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(feature = "nightly", feature(read_initializer))]
 
 use failure::Fail;
 use safe_shl::SafeShl;

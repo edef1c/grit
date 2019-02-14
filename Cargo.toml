@@ -13,3 +13,4 @@ members = [
 
 [patch.crates-io]
 void = { path = "void" }
+flate2 = { path = "flate2" }

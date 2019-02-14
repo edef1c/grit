@@ -10,3 +10,6 @@ git = { path = "../git", features = ["std"] }
 git_delta = { path = "../git_delta", features = ["std"] }
 git_pack = { path = "../git_pack" }
 flate2 = "*"
+
+[features]
+nightly = ["git_delta/nightly", "flate2/nightly"]
