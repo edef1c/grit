@@ -56,14 +56,15 @@ impl PackIndex {
             git_pack::DeltaBase::Offset(off)    => self.find_by_offset(off)?,
             git_pack::DeltaBase::Reference(obj) => self.find_by_object(obj)?
         };
-        let mut entry_index = base_index;
+        let mut layer = &self.by_offset[base_index];
         Some(loop {
-            let layer = &self.by_offset[entry_index];
-            entry_index = match layer.base_index {
+            match layer.base_index {
                 None => break PackBase { base_index, root_entry: layer },
-                Some(index) => index
-            };
-            layer_offsets.push(layer.offset + layer.header_len as u64);
+                Some(index) => {
+                    layer_offsets.push(layer.offset + layer.header_len as u64);
+                    layer = &self.by_offset[index];
+                }
+            }
         })
     }
 }
