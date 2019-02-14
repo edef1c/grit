@@ -78,6 +78,7 @@
 #![deny(missing_debug_implementations)]
 #![allow(trivial_numeric_casts)]
 #![cfg_attr(test, deny(warnings))]
+#![cfg_attr(feature = "nightly", feature(read_initializer))]
 
 extern crate crc32fast;
 #[cfg(feature = "tokio")]

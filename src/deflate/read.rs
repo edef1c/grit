@@ -111,6 +111,11 @@ impl<R: Read> Read for DeflateEncoder<R> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.inner.read(buf)
     }
+
+    #[cfg(feature = "nightly")]
+    unsafe fn initializer(&self) -> io::Initializer {
+        io::Initializer::nop()
+    }
 }
 
 #[cfg(feature = "tokio")]

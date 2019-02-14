@@ -235,6 +235,11 @@ impl<R: BufRead> Read for ZlibDecoder<R> {
     fn read(&mut self, into: &mut [u8]) -> io::Result<usize> {
         zio::read(&mut self.obj, &mut self.data, into)
     }
+
+    #[cfg(feature = "nightly")]
+    unsafe fn initializer(&self) -> io::Initializer {
+        io::Initializer::nop()
+    }
 }
 
 #[cfg(feature = "tokio")]

@@ -43,6 +43,7 @@ default = ["miniz-sys"]
 zlib = ["libz-sys"]
 rust_backend = ["miniz_oxide_c_api"]
 tokio = ["tokio-io", "futures"]
+nightly = []
 
 [badges]
 travis-ci = { repository = "alexcrichton/flate2-rs" }
